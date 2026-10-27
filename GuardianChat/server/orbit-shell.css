@@ -34,3 +34,5 @@ html.embedded #welcome,html.embedded #orbitIntro{display:none!important}
 #orbitTabs>.orbit-tab,#orbitTabs>.orbit-tab:hover,#orbitTabs>.orbit-tab:active,#orbitTabs>.orbit-tab[aria-selected=true],#orbitTabs>.orbit-tab[aria-pressed=true]{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;color:var(--muted)!important}
 #orbitTabs>.orbit-tab[aria-selected=true]{color:var(--ink)!important}
 #orbitTabs>.orbit-tab[hidden]{display:none!important}
+html[data-theme=bright] #orbitTabs>.orbit-tab{color:#26324f!important}
+html[data-theme=bright] #orbitTabs>.orbit-tab[aria-selected=true]{color:#0B1520!important}

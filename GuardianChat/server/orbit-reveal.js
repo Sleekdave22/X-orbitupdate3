@@ -21,7 +21,7 @@
     const o=origin(el,trigger);
     el.animate([{clipPath:'circle(0px at '+o.x+'px '+o.y+'px)',opacity:.4},{clipPath:'circle('+o.rad+'px at '+o.x+'px '+o.y+'px)',opacity:1}],{duration:360,easing:'cubic-bezier(.2,.8,.2,1)'});
   }
-  const SELECTOR='#settingsPanel,#navigationMenu,dialog,[data-reveal]';
+  const SELECTOR='#settingsPanel,#navigationMenu,dialog,[data-reveal],#profile,#callList';
   const seen=new WeakSet();
   function watch(el){
     if(seen.has(el))return;seen.add(el);
@@ -29,6 +29,12 @@
   }
   function scan(root){(root.querySelectorAll?root.querySelectorAll(SELECTOR):[]).forEach(watch);if(root.matches&&root.matches(SELECTOR))watch(root)}
   function start(){scan(document);new MutationObserver(l=>{for(const m of l)m.addedNodes.forEach(n=>{if(n.nodeType===1)scan(n)})}).observe(document.body,{childList:true,subtree:true})}
+  // Tabs that open a different page (Vibe, My Orbit, Calls from Vibe): the next page grows from the tab that was pressed.
+  const KEY='orbit-reveal-from';
+  addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('.orbit-bottom-nav button,[data-reveal-from]');if(!t)return;const b=t.getBoundingClientRect();try{sessionStorage.setItem(KEY,JSON.stringify({x:b.left+b.width/2,y:b.top+b.height/2,at:Date.now()}))}catch(_){}},true);
+  try{const raw=sessionStorage.getItem(KEY);if(raw){sessionStorage.removeItem(KEY);const o=JSON.parse(raw);
+    if(Date.now()-o.at<4000&&!still()&&document.documentElement.animate&&window.parent===window){const rad=Math.ceil(Math.hypot(Math.max(o.x,innerWidth-o.x),Math.max(o.y,innerHeight-o.y)));
+      document.documentElement.animate([{clipPath:'circle(0px at '+o.x+'px '+o.y+'px)'},{clipPath:'circle('+rad+'px at '+o.x+'px '+o.y+'px)'}],{duration:380,easing:'cubic-bezier(.2,.8,.2,1)'})}}}catch(_){}
   window.OrbitReveal={play,watch};
   if(document.body)start();else addEventListener('DOMContentLoaded',start);
 })();
