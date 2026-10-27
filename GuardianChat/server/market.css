@@ -9,3 +9,31 @@
 .muted{color:var(--muted)}.sub{margin:8px 0 6px;font-size:14px;color:var(--muted)}
 .mtabs button{flex:1!important}
 .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));overflow:visible;gap:7px}.cats button{display:flex;align-items:center;gap:7px;border-radius:12px;padding:8px;font-size:12px;white-space:normal;text-align:left;min-height:44px}.category-icon{font-size:21px}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}.market-grid .ad{margin:0;min-width:0}.listing-open{display:block!important;width:100%;text-align:left!important;background:transparent!important;padding:0!important;white-space:normal}.listing-open h3{font-size:16px}.listing-open small{display:block;color:var(--muted)}.product-thumbnail:empty{display:none}.product-thumbnail img{width:100%;height:160px;object-fit:cover;border-radius:11px;margin-bottom:9px}.product-gallery{display:flex;gap:10px;overflow-x:auto}.product-gallery img{max-width:85%;height:260px;object-fit:contain;border-radius:14px}.store-heading img{width:62px;height:62px;object-fit:cover;border-radius:50%;float:left;margin-right:12px}dl{display:grid;grid-template-columns:minmax(90px,auto) 1fr;gap:7px 15px}dt{color:var(--muted);text-transform:capitalize}dd{margin:0;overflow-wrap:anywhere}.mcard fieldset label{display:inline-flex;align-items:center;gap:8px;margin-right:12px}.mcard input[type=checkbox]{width:20px;min-height:20px;margin:0}.attribute-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}header>button:last-child{margin-left:auto;flex:none}#view>button{margin-bottom:10px}@media(max-width:480px){.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.market-grid .ad{padding:10px}.product-thumbnail img{height:120px}.listing-open h3{font-size:14px}.product-gallery img{height:220px}.cats{grid-template-columns:repeat(3,minmax(0,1fr))}.cats button{font-size:11px}.mtabs button{padding:8px;font-size:12px}}
+
+/* Plaza: let the wallpaper show through. Surfaces become frosted glass instead of solid blocks. */
+html,body{min-height:100dvh}
+body>header{background:linear-gradient(#0b1520e6,#0b1520cc);border-bottom:1px solid var(--line);position:relative}
+html[data-theme=bright] body>header{background:linear-gradient(#f4f7fbe6,#f4f7fbcc)}
+main{background:transparent}
+.ad,.shop,.mcard,#searchForm input,.cats button,.mtabs button,#marketFilters{background:color-mix(in srgb,var(--surface) 55%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.cats button[aria-pressed=true],.mtabs button[aria-pressed=true]{background:var(--accent)}
+.mcard input,.mcard select,.mcard textarea{background:color-mix(in srgb,var(--paper) 60%,transparent)}
+#notice{text-shadow:0 1px 3px #0008}
+html[data-theme=bright] #notice{text-shadow:none}
+
+/* Notification bell: top right, no box. Outline normally; filled in a lighter contrasting tone while its panel is open. */
+#plazaBell{position:absolute!important;top:10px;right:10px;margin:0!important;width:44px;height:44px;min-height:44px;padding:0!important;display:grid;place-items:center;background:transparent!important;border:0!important;box-shadow:none!important;color:var(--ink);border-radius:50%}
+#plazaBell svg{fill:none;transition:fill .2s,color .2s}
+#plazaBell[aria-expanded=true]{color:var(--cyan)}
+#plazaBell[aria-expanded=true] svg{fill:color-mix(in srgb,var(--cyan) 35%,white)}
+#plazaBell .notification-badge{position:absolute;top:4px;right:2px}
+body>header>div{padding-right:48px}
+
+/* Notification panel: grows from the bell down to half the screen, on the Settings wallpaper. */
+#plazaNotes{position:fixed;left:0;right:0;top:0;height:50dvh;z-index:1100;overflow:auto;padding:max(12px,env(safe-area-inset-top)) 14px 16px;background:var(--bg);background-image:var(--pair-wallpaper),var(--orbit-settings-wallpaper);background-size:cover;background-position:center top;background-blend-mode:color,normal;border-bottom:1px solid var(--line);border-radius:0 0 22px 22px;box-shadow:0 12px 30px #0006;color:var(--ink)}
+#plazaNotes[hidden]{display:none}
+#plazaNotes .plaza-notes-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding-right:48px}
+#plazaNotes h2{margin:0;font-size:18px}
+#plazaShade{position:fixed;inset:0;z-index:1090;background:#0005}
+#plazaShade[hidden]{display:none}
+.orbit-notification-item{background:color-mix(in srgb,var(--card) 70%,transparent)}

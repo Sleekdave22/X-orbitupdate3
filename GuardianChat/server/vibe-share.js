@@ -1,4 +1,4 @@
-/* One explicit audience chooser for source references from Market and Play. */
+/* One explicit audience chooser for source references from Plaza and Play. */
 (()=>{'use strict';
 const el=(tag,text='')=>{const n=document.createElement(tag);n.textContent=text;return n};
 window.OrbitVibeShare={async show(api,source,{prompt=false}={}){

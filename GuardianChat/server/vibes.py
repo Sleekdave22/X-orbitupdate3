@@ -12,6 +12,8 @@ def init(server):
  CREATE TABLE IF NOT EXISTS vibe_views(item TEXT NOT NULL,uid TEXT NOT NULL,first_seen INTEGER NOT NULL,last_seen INTEGER NOT NULL,opens INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(item,uid));
  CREATE TABLE IF NOT EXISTS vibe_reactions(item TEXT NOT NULL,uid TEXT NOT NULL,emoji TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(item,uid));
  CREATE INDEX IF NOT EXISTS vibe_active ON vibe_items(expires,uid,visibility);
+ CREATE TABLE IF NOT EXISTS vibe_blocked_viewers(owner TEXT NOT NULL,target TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(owner,target));
+ CREATE TABLE IF NOT EXISTS vibe_hidden(viewer TEXT NOT NULL,owner TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(viewer,owner));
  CREATE TABLE IF NOT EXISTS vibe_replies(message_id INTEGER PRIMARY KEY,item TEXT NOT NULL,visibility TEXT NOT NULL,sender TEXT NOT NULL,client_id TEXT NOT NULL,UNIQUE(sender,client_id));
  ''')
  with server.db() as d:__import__('vibe_sources').schema(d)
@@ -34,6 +36,8 @@ def allowed(d,uid,item,now=None):
  if item is None or item['expires']<=(int(time.time()) if now is None else now) or item['media'] is None:return False
  if item['uid']==uid:return True
  if social.blocked(d,uid,item['uid']):return False
+ # The author's own list: these people never see this author's Vibes, whatever the audience.
+ if d.execute('SELECT 1 FROM vibe_blocked_viewers WHERE owner=? AND target=?',(item['uid'],uid)).fetchone():return False
  return item['visibility']=='public' or bool(d.execute('SELECT 1 FROM vibe_audience a JOIN contacts c ON c.owner=? AND c.peer=a.uid WHERE a.item=? AND a.uid=?',(item['uid'],item['id'],uid)).fetchone())
 
 def item(d,uid,ident):
@@ -52,6 +56,10 @@ def get(server,uid,action,q):
     try:records.append(__import__('vibe_sources').resolve(d,uid,target,source['kind'],source['source'],source['game']))
     except (ValueError,PermissionError):continue
    return {'achievements':records}
+  if action=='privacy':
+   def people(sql):return [dict(r) for r in d.execute(sql,(uid,))]
+   return {'blocked':people('SELECT u.id AS uid,u.name,u.nickname FROM vibe_blocked_viewers b JOIN users u ON u.id=b.target WHERE b.owner=? ORDER BY b.created DESC'),
+           'hidden':people('SELECT u.id AS uid,u.name,u.nickname FROM vibe_hidden h JOIN users u ON u.id=h.owner WHERE h.viewer=? ORDER BY h.created DESC')}
   if action=='item':
    r=item(d,uid,q.get('id',[''])[0]);u=d.execute('SELECT id,name,nickname FROM users WHERE id=?',(r['uid'],)).fetchone()
    return {'group':dict(u)|{'uid':r['uid'],'items':[{'id':r['id'],'expires':r['expires'],'viewed':False}]},'visibility':r['visibility']}
@@ -62,8 +70,9 @@ def get(server,uid,action,q):
    visibility=q.get('visibility',['public'])[0]
    if visibility not in ('public','private'):raise ValueError('Choose Public or Private Vibe')
    groups={}
+   hidden={x[0] for x in d.execute('SELECT owner FROM vibe_hidden WHERE viewer=?',(uid,))}
    for r in d.execute('SELECT i.id,i.uid,i.visibility,i.mime,i.caption,i.created,i.expires,1 AS media,u.name,u.nickname,u.avatar,u.avatar_mime FROM vibe_items i JOIN users u ON u.id=i.uid WHERE i.visibility=? AND i.expires>? AND i.media IS NOT NULL ORDER BY i.created,i.rowid',(visibility,int(time.time()))):
-    if not allowed(d,uid,r):continue
+    if not allowed(d,uid,r) or r['uid'] in hidden:continue
     contact=bool(d.execute('SELECT 1 FROM contacts WHERE owner=? AND peer=?',(uid,r['uid'])).fetchone())
     following=bool(d.execute("SELECT 1 FROM social_follows WHERE follower=? AND target=? AND state='accepted'",(uid,r['uid'])).fetchone())
     group=groups.setdefault(r['uid'],{'uid':r['uid'],'name':r['name'],'nickname':r['nickname'],'contact':contact,'following':following,'avatar':r['avatar'] if contact or r['uid']==uid else None,'avatar_mime':r['avatar_mime'] if contact or r['uid']==uid else None,'items':[]})
@@ -138,6 +147,14 @@ def post(server,uid,action,b):
    public=b.get('public_hours');private=b.get('private_hours')
    if type(public)!=int or public not in HOURS or type(private)!=int or private not in HOURS:raise ValueError('Choose 12, 24 or 48 hours independently')
    d.execute('INSERT INTO vibe_settings VALUES(?,?,?) ON CONFLICT(uid) DO UPDATE SET public_hours=excluded.public_hours,private_hours=excluded.private_hours',(uid,public,private));return {'ok':True}
+  if action in ('viewer_block','viewer_unblock','hide','unhide'):
+   target=str(b.get('target',''))
+   if target==uid or not d.execute('SELECT 1 FROM users WHERE id=?',(target,)).fetchone():raise ValueError('Choose another account')
+   table,cols=('vibe_blocked_viewers',(uid,target)) if action.startswith('viewer_') else ('vibe_hidden',(uid,target))
+   if action in ('viewer_block','hide'):d.execute('INSERT OR IGNORE INTO '+table+' VALUES(?,?,?)',cols+(now,))
+   elif action=='viewer_unblock':d.execute('DELETE FROM vibe_blocked_viewers WHERE owner=? AND target=?',cols)
+   else:d.execute('DELETE FROM vibe_hidden WHERE viewer=? AND owner=?',cols)
+   return {'ok':True}
   if action=='publish':
    visibility=b.get('visibility');client=str(b.get('client_id',''));caption=str(b.get('caption','')).strip()
    if visibility not in ('public','private') or not 8<=len(client)<=100 or len(caption)>500:raise ValueError('Invalid Vibe publication')

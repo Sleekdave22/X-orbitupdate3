@@ -8,7 +8,7 @@ const message=market.slice(market.indexOf('async function message('),market.inde
 const deep=html.slice(html.indexOf('async function openMarketSellerChat('),html.indexOf("el('marketTab').onclick"));
 (async()=>{
  let routed='',requested=[],failure=false,notice='';
- const c={native:false,encodeURIComponent,api:async(path,body)=>{requested.push([path,body]);if(failure)throw Error('Account interaction unavailable')},location:{assign:x=>routed=x},say:x=>notice=x};
+ const c={native:false,encodeURIComponent,api:async(path,body)=>{requested.push([path,body]);if(failure)throw Error('Account interaction unavailable')},location:{assign:x=>routed=x},orbitGo:x=>routed=x,say:x=>notice=x};
  vm.createContext(c);vm.runInContext(message,c);await c.message('seller/id','Seller');assert.equal(routed,'/?chat=seller%2Fid');assert.deepEqual(requested[0],['/contacts',{code:'seller/id'}]);
  routed='';failure=true;await c.message('blocked','Blocked');assert.equal(routed,'');assert(notice.includes('unavailable'));
  failure=false;c.native=true;c.GuardianGaming={openChat:(id,name)=>routed=id+':'+name};await c.message('native','Seller');assert.equal(routed,'native:Seller');

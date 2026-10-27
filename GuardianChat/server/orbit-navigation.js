@@ -18,7 +18,7 @@ mainNavigation.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].include
 const originalShow=show;show=which=>{originalShow(which);syncMainNavigation()};
 const management=document.createElement('div');management.className='profile-management';
 for(const [label,fn] of [['Settings',()=>toggleSettings(true)],['Personalization',()=>{toggleSettings(true);document.getElementById('openPersonalization')?.click()}]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;management.append(b)}
-el('profile').append(management);const oldProfile=showProfile;showProfile=async id=>{await oldProfile(id);management.hidden=id!==account?.id;el('profile').querySelector('.profile-title h2').textContent=id===account?.id?'My profile':'Contact card';syncMainNavigation()};
+el('profile').append(management);const oldProfile=showProfile;showProfile=async id=>{await oldProfile(id);management.hidden=id!==account?.id;el('profile').querySelector('.profile-title h2').textContent=id===account?.id?'My Orbit':'Contact card';syncMainNavigation()};
 syncMainNavigation();
 window.addEventListener('resize',syncMainNavigation);
 function ensureHomeActivity(){
