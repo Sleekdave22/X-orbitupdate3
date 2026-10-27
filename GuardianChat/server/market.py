@@ -79,6 +79,8 @@ def search_clause(q):
 
 def get(server, uid, path, query):
     if path=='/market/admin':return __import__('market_admin').get(server,uid)
+    if path in ('/market/demand_mine','/market/demand_hot','/market/demand_admin'):
+        return __import__('market_demand').get(server,uid,path,query)
     if path in ('/market/demo_wallet','/market/demo_orders','/market/demo_order'):
         return __import__('market_demo').get(server,uid,path,query)
     if path in ('/market/saved','/market/offers','/market/offer','/market/chat_context','/market/activity','/market/activity_item'):
@@ -139,6 +141,10 @@ def get(server, uid, path, query):
 
 
 def post(server, uid, action, b):
+    if action in ('demand_create','demand_close','demand_alerts'):
+        m=__import__('market_demand');return {'demand_create':m.create,'demand_close':m.close,'demand_alerts':m.set_alerts}[action](server,uid,b)
+    if action in ('admin_demand_config','admin_demand_close'):
+        return __import__('market_demand').admin_post(server,uid,action,b)
     if action in ('admin_config','admin_category','admin_seller','admin_feature','admin_synonym'):
         return __import__('market_admin').post(server,uid,action,b)
     if action in ('demo_deposit','demo_withdraw','demo_order_create','demo_order_action'):

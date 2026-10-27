@@ -29,6 +29,7 @@ def init(server):
   CREATE TABLE IF NOT EXISTS market_categories(id TEXT PRIMARY KEY,name TEXT NOT NULL,icon TEXT NOT NULL,subcategories TEXT NOT NULL,attributes TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 1);
   CREATE TABLE IF NOT EXISTS market_seller_meta(uid TEXT PRIMARY KEY,country TEXT NOT NULL DEFAULT '',city TEXT NOT NULL DEFAULT '',restricted INTEGER NOT NULL DEFAULT 0,reason TEXT NOT NULL DEFAULT '');
   CREATE TABLE IF NOT EXISTS market_listing_meta(id TEXT PRIMARY KEY,category_id TEXT NOT NULL,subcategory TEXT NOT NULL DEFAULT '',amount_minor INTEGER,currency TEXT NOT NULL DEFAULT '',condition TEXT NOT NULL DEFAULT '',country TEXT NOT NULL DEFAULT '',city TEXT NOT NULL DEFAULT '',attributes TEXT NOT NULL DEFAULT '{}',delivery TEXT NOT NULL DEFAULT '[]',availability TEXT NOT NULL DEFAULT 'in_stock',state TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 1,updated INTEGER NOT NULL,featured INTEGER NOT NULL DEFAULT 0);
+  CREATE INDEX IF NOT EXISTS market_listing_meta_category ON market_listing_meta(category_id,state);
   CREATE TABLE IF NOT EXISTS market_images(id TEXT PRIMARY KEY,listing TEXT NOT NULL,mime TEXT NOT NULL,data BLOB NOT NULL,position INTEGER NOT NULL);
   CREATE INDEX IF NOT EXISTS market_images_listing ON market_images(listing,position);
   CREATE TABLE IF NOT EXISTS market_listing_audit(id INTEGER PRIMARY KEY,listing TEXT NOT NULL,actor TEXT NOT NULL,action TEXT NOT NULL,created INTEGER NOT NULL,revision INTEGER NOT NULL);
@@ -43,6 +44,7 @@ def init(server):
  __import__('market_connections').init(server)
  __import__('market_demo').init(server)
  __import__('market_admin').init(server)
+ __import__('market_demand').init(server)
 
 def catalog(d,all=False):
  return [dict(r)|{'subcategories':json.loads(r['subcategories']),'attributes':json.loads(r['attributes'])} for r in d.execute('SELECT * FROM market_categories'+('' if all else ' WHERE enabled=1')+' ORDER BY rowid')]

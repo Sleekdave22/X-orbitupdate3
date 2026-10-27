@@ -78,6 +78,7 @@ class ChatServer(ThreadingHTTPServer):
         self.stream_relay=__import__("stream_relay").StreamRelay(self)
         self.calls={};self.call_lock=threading.RLock()
         self.login_attempts={}
+        self.api_hits={};self.api_lock=threading.Lock()
         self.migrate_files()
         self.expire_views()
         super().__init__(address,Handler)
@@ -98,6 +99,8 @@ class ChatServer(ThreadingHTTPServer):
             with self.db() as db:
                 db.execute('BEGIN IMMEDIATE');__import__('market_connections').expire(db)
         except Exception as error:print('Market reservation maintenance deferred: '+type(error).__name__,flush=True)
+        try:__import__('market_demand').sweep(self)
+        except Exception as error:print('Demand matching deferred: '+type(error).__name__,flush=True)
         try:__import__('market_connections').dispatch(self)
         except Exception as error:print('Market notification dispatch deferred: '+type(error).__name__,flush=True)
         try:__import__('result_reviews').dispatch(self)
@@ -173,6 +176,25 @@ class ChatServer(ThreadingHTTPServer):
                      'text/plain':'.txt' }.get(mime) or mimetypes.guess_extension(mime or '') or ''
         stem=Path(name).stem if Path(name).suffix else name
         return self.data/'files'/f'{stem}__{fid}{suffix}'
+    def allow_request(self,uid,limit=600,window=60):
+        """Per-account request ceiling for signed-in POSTs (a human never gets near it)."""
+        now=time.time()
+        with self.api_lock:
+            start,count=self.api_hits.get(uid,(now,0))
+            if now-start>=window:start,count=now,0
+            if count>=limit:return False
+            self.api_hits[uid]=(start,count+1)
+            if len(self.api_hits)>5000:
+                for key in [k for k,(st,_) in self.api_hits.items() if now-st>=window]:self.api_hits.pop(key,None)
+            return True
+    def note_failure(self,key):
+        """Count a failed credential check per client address; bounded memory."""
+        now=time.time()
+        with self.api_lock:
+            attempts,until=self.login_attempts.get(key,(0,0))
+            self.login_attempts[key]=(attempts+1 if until>now else 1,now+60)
+            if len(self.login_attempts)>2000:
+                for k in [k for k,(_,u) in self.login_attempts.items() if u<=now]:self.login_attempts.pop(k,None)
     def migrate_files(self):
         with self.db() as db:
             for row in db.execute('SELECT fileid,filename,mime FROM messages WHERE fileid IS NOT NULL'):
@@ -412,13 +434,15 @@ class Handler(BaseHTTPRequestHandler):
                     salt=stored.split(':')[0] if stored else '0'*32
                     digest=hashlib.pbkdf2_hmac('sha256',password.encode(),bytes.fromhex(salt),200000).hex()
                     if not stored or not hmac.compare_digest(stored,salt+':'+digest):
-                        self.server.login_attempts[key]=(attempts+1 if until>time.time() else 1,time.time()+60);raise PermissionError('Incorrect account or password')
+                        self.server.note_failure(key);raise PermissionError('Incorrect account or password')
                     token=secrets.token_urlsafe(32);db.execute('INSERT INTO sessions VALUES(?,?)',(hashlib.sha256(token.encode()).hexdigest(),row['id']))
                     self.server.login_attempts.pop(key,None)
                     self.reply(200,{'id':row['id'],'name':row['name'],'nickname':row['nickname'],'token':token});return
             if self.path=='/register':
                 using_link='invite_link' in body
-                if not using_link and not hmac.compare_digest(str(body.get('invite','')),self.server.invite):raise PermissionError('Incorrect invitation code')
+                reg_key='register:'+self.client_address[0];attempts,until=self.server.login_attempts.get(reg_key,(0,0))
+                if attempts>=8 and until>time.time():self.reply(429,{'error':'Too many attempts. Try again in one minute.'});return
+                if not using_link and not hmac.compare_digest(str(body.get('invite','')),self.server.invite):self.server.note_failure(reg_key);raise PermissionError('Incorrect invitation code')
                 password=body.get('password','')
                 if using_link and (not isinstance(password,str) or not 10<=len(password)<=128):self.reply(400,{'error':'Use a password of 10–128 characters'});return
                 name=str(body.get('name','')).strip()
@@ -440,6 +464,7 @@ class Handler(BaseHTTPRequestHandler):
                     __import__('account_invites').record(db,uid,inviter)
                 self.reply(201,{'id':uid,'token':token,'name':name,'nickname':nickname});return
             uid=self.user()
+            if not self.server.allow_request(uid):self.reply(429,{'error':'Too many requests. Please wait a moment.'});return
             if self.path=='/invitations/reset':
                 self.reply(200,__import__('account_invites').getown(self.server,uid,rotate=True));return
             if self.path.startswith('/leagues/'):
