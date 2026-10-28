@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
  <style name="Theme.XOrbit" parent="Theme.XOrbit.Base">
-  <item name="android:windowSplashScreenAnimatedIcon">@drawable/orbit_plain</item>
+  <item name="android:windowSplashScreenAnimatedIcon">@drawable/orbit_splash</item>
   <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
   <item name="android:windowSplashScreenBackground">#0B1520</item>
  </style>

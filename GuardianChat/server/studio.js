@@ -28,7 +28,7 @@ function studioControlsHub(view){
   ['Create registration windows, inspect generated groups and extend a season with a reason.','Seasons',()=>route('seasons')],
   ['Inspect fixtures, agreed times, evidence and confirmed results in the selected competition.','Matches',()=>route('fixtures')],
   ['Manage broadcaster rooms and invitations through the existing live interface.','Live streams',()=>route('streams')],
-  ['Manage Plaza categories, listings, reports, search and simulated order reviews.','Orbit Plaza',()=>location.assign('/market.html?admin=1')],
+  ['Manage Plaza categories, listings, reports, search and simulated order reviews.','OrbitPlaza',()=>location.assign('/market.html?admin=1')],
   ['Open your account profile for account-report moderation and follow/message requests.','Account reports',()=>openSocialProfile(account.id)]
  ]){const row=node('div','','orbit-form-row');const action=button(label,open);action.dataset.help=summary;row.append(node('p',summary),action);hub.append(row)}
  hub.append(node('p','Results, ratings, permission grants and recorded history are not freely editable. Reviews and policy changes use the authorised audited workflows.','muted'));view.append(hub);

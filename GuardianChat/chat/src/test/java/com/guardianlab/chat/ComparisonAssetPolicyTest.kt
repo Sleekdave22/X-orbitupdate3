@@ -7,6 +7,7 @@ class ComparisonAssetPolicyTest {
  private val policy = ComparisonAssetPolicy("https://192.168.1.171:8766")
  @Test fun ownStaticFilesUseBundledInterface() {
   assertEquals("comparison-web/gaming.html", policy.asset("GET", "https://192.168.1.171:8766/gaming.html?league=abc"))
+  for(file in listOf("media-editor.js","media-editor.css"))assertEquals("comparison-web/$file",policy.asset("GET","https://192.168.1.171:8766/$file"))
   assertEquals("comparison-web/orbit-theme.css", policy.asset("GET", "https://192.168.1.171:8766/orbit-theme.css"))
  }
  @Test fun wallpaperAssetsRemainStaticAndOriginBound() {
@@ -18,7 +19,7 @@ class ComparisonAssetPolicyTest {
   assertNull(policy.asset("GET", "https://192.168.1.171:8766/branding/private.png"))
  }
  @Test fun APIsAndMediaAlwaysReachServer() {
-  for (path in listOf("/", "/profile", "/gamebox/summary", "/gaming/summary", "/messages", "/files/123", "/calls", "/wallet/me"))
+  for (path in listOf("/", "/profile", "/gamebox/summary", "/gaming/summary", "/messages", "/files/123", "/calls", "/wallet/me", "/media-editor/policy", "/media-editor/upload", "/media-editor/job?id=private", "/media-editor/media?id=private"))
    assertNull(path, policy.asset("GET", "https://192.168.1.171:8766$path"))
   assertNull(policy.asset("POST", "https://192.168.1.171:8766/gaming.html"))
  }

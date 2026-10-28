@@ -1,0 +1,9 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const events={},buttons=Array.from({length:3},()=>({attrs:{},setAttribute(k,v){this.attrs[k]=v},addEventListener(){},focus(){}})),host={clientWidth:390,classList:{add(){}},setAttribute(){},append(n){this.line=n},addEventListener(k,fn){events[k]=fn},setPointerCapture(){}};
+let now=0,timers=[],routes=[];const context={window:{matchMedia:()=>({matches:false})},document:{body:{dataset:{}},createElement:()=>({style:{},setAttribute(){}}),querySelector:()=>null,addEventListener(){}},sessionStorage:{getItem(){},removeItem(){},setItem(){}},performance:{now:()=>now},setTimeout:fn=>(timers.push(fn),timers.length),requestAnimationFrame:fn=>fn()};vm.createContext(context);vm.runInContext(fs.readFileSync(__dirname+'/orbit-switcher.js','utf8'),context);
+const mount=()=>{routes=[];timers=[];context.window.OrbitSwitch.mount(host,buttons.map((button,index)=>({button,label:['Play','Chat','Plaza'][index],activate:()=>routes.push(index)})),1)};
+const event=(x,y=20)=>({clientX:x,clientY:y,pointerId:1,button:0,preventDefault(){}});
+mount();assert.equal(host.line.style.transform,'translateX(100%)');assert.equal(buttons[1].attrs['aria-selected'],'true');events.pointerdown(event(300));now=200;events.pointermove(event(180));assert.match(host.line.style.transform,/130/);events.pointerup(event(180));timers.shift()();assert.deepEqual(routes,[2]);
+mount();events.pointerdown(event(200));now+=300;events.pointermove(event(180));events.pointercancel(event(180));assert.deepEqual(routes,[]);assert.equal(host.line.style.transform,'translateX(100%)');
+mount();buttons[0].onclick();timers.shift()();assert.deepEqual(routes,[0]);
+console.log('Shared tab line follows drag; partial swipe, cancellation and existing route activation passed.');

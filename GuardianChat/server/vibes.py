@@ -1,5 +1,6 @@
 """Expiring account Vibes. Every media read rechecks audience, block and expiry."""
 import base64,hashlib,io,json,time,uuid
+from pathlib import Path
 from PIL import Image
 HOURS=(12,24,48)
 EMOJI=('❤️','🔥','😂','👏','😮','🎉')
@@ -12,11 +13,12 @@ def init(server):
  CREATE TABLE IF NOT EXISTS vibe_views(item TEXT NOT NULL,uid TEXT NOT NULL,first_seen INTEGER NOT NULL,last_seen INTEGER NOT NULL,opens INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(item,uid));
  CREATE TABLE IF NOT EXISTS vibe_reactions(item TEXT NOT NULL,uid TEXT NOT NULL,emoji TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(item,uid));
  CREATE INDEX IF NOT EXISTS vibe_active ON vibe_items(expires,uid,visibility);
- CREATE TABLE IF NOT EXISTS vibe_blocked_viewers(owner TEXT NOT NULL,target TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(owner,target));
- CREATE TABLE IF NOT EXISTS vibe_hidden(viewer TEXT NOT NULL,owner TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(viewer,owner));
  CREATE TABLE IF NOT EXISTS vibe_replies(message_id INTEGER PRIMARY KEY,item TEXT NOT NULL,visibility TEXT NOT NULL,sender TEXT NOT NULL,client_id TEXT NOT NULL,UNIQUE(sender,client_id));
  ''')
- with server.db() as d:__import__('vibe_sources').schema(d)
+ with server.db() as d:
+  d.execute('CREATE TABLE IF NOT EXISTS vibe_media_metadata(item TEXT PRIMARY KEY,asset TEXT,duration_ms INTEGER NOT NULL,start_ms INTEGER NOT NULL,end_ms INTEGER NOT NULL)')
+  __import__('vibe_sources').schema(d)
+  __import__('vibe_privacy').schema(d)
 
 def recipients(d,uid,visibility,audience):
  if not isinstance(audience,list) or len(audience)>200 or any(not isinstance(x,str) for x in audience):raise ValueError('Choose valid private recipients')
@@ -24,7 +26,7 @@ def recipients(d,uid,visibility,audience):
  if not audience:raise ValueError('Choose at least one existing contact for this Private Vibe')
  import social
  for target in set(audience):
-  if not d.execute('SELECT 1 FROM contacts WHERE owner=? AND peer=?',(uid,target)).fetchone() or social.blocked(d,uid,target):raise PermissionError('Private Vibe recipients must be your available contacts')
+  if not d.execute('SELECT 1 FROM contacts WHERE owner=? AND peer=?',(uid,target)).fetchone() or social.blocked(d,uid,target) or not __import__('vibe_privacy').permitted(d,target,uid,'private'):raise PermissionError('Private Vibe recipients must be your available, permitted contacts')
  return sorted(set(audience))
 
 def preferences(d,uid):
@@ -35,9 +37,7 @@ def allowed(d,uid,item,now=None):
  import social
  if item is None or item['expires']<=(int(time.time()) if now is None else now) or item['media'] is None:return False
  if item['uid']==uid:return True
- if social.blocked(d,uid,item['uid']):return False
- # The author's own list: these people never see this author's Vibes, whatever the audience.
- if d.execute('SELECT 1 FROM vibe_blocked_viewers WHERE owner=? AND target=?',(item['uid'],uid)).fetchone():return False
+ if social.blocked(d,uid,item['uid']) or not __import__('vibe_privacy').permitted(d,uid,item['uid'],item['visibility']):return False
  return item['visibility']=='public' or bool(d.execute('SELECT 1 FROM vibe_audience a JOIN contacts c ON c.owner=? AND c.peer=a.uid WHERE a.item=? AND a.uid=?',(item['uid'],item['id'],uid)).fetchone())
 
 def item(d,uid,ident):
@@ -45,7 +45,11 @@ def item(d,uid,ident):
  if not allowed(d,uid,r):raise PermissionError('This Vibe expired or is unavailable to your account')
  return r
 
+def cache_tag(r,source):
+ return r['digest']+':'+hashlib.sha256(json.dumps(source,sort_keys=True).encode()).hexdigest()
+
 def get(server,uid,action,q):
+ if action=='privacy':return __import__('vibe_privacy').get(server,uid)
  with server.db() as d:
   if action=='prompts':return {'prompts':__import__('vibe_sources').prompts(d,uid)}
   if action=='achievements':
@@ -56,10 +60,6 @@ def get(server,uid,action,q):
     try:records.append(__import__('vibe_sources').resolve(d,uid,target,source['kind'],source['source'],source['game']))
     except (ValueError,PermissionError):continue
    return {'achievements':records}
-  if action=='privacy':
-   def people(sql):return [dict(r) for r in d.execute(sql,(uid,))]
-   return {'blocked':people('SELECT u.id AS uid,u.name,u.nickname FROM vibe_blocked_viewers b JOIN users u ON u.id=b.target WHERE b.owner=? ORDER BY b.created DESC'),
-           'hidden':people('SELECT u.id AS uid,u.name,u.nickname FROM vibe_hidden h JOIN users u ON u.id=h.owner WHERE h.viewer=? ORDER BY h.created DESC')}
   if action=='item':
    r=item(d,uid,q.get('id',[''])[0]);u=d.execute('SELECT id,name,nickname FROM users WHERE id=?',(r['uid'],)).fetchone()
    return {'group':dict(u)|{'uid':r['uid'],'items':[{'id':r['id'],'expires':r['expires'],'viewed':False}]},'visibility':r['visibility']}
@@ -70,9 +70,8 @@ def get(server,uid,action,q):
    visibility=q.get('visibility',['public'])[0]
    if visibility not in ('public','private'):raise ValueError('Choose Public or Private Vibe')
    groups={}
-   hidden={x[0] for x in d.execute('SELECT owner FROM vibe_hidden WHERE viewer=?',(uid,))}
    for r in d.execute('SELECT i.id,i.uid,i.visibility,i.mime,i.caption,i.created,i.expires,1 AS media,u.name,u.nickname,u.avatar,u.avatar_mime FROM vibe_items i JOIN users u ON u.id=i.uid WHERE i.visibility=? AND i.expires>? AND i.media IS NOT NULL ORDER BY i.created,i.rowid',(visibility,int(time.time()))):
-    if not allowed(d,uid,r) or r['uid'] in hidden:continue
+    if not allowed(d,uid,r) or __import__('vibe_privacy').muted(d,uid,r['uid']):continue
     contact=bool(d.execute('SELECT 1 FROM contacts WHERE owner=? AND peer=?',(uid,r['uid'])).fetchone())
     following=bool(d.execute("SELECT 1 FROM social_follows WHERE follower=? AND target=? AND state='accepted'",(uid,r['uid'])).fetchone())
     group=groups.setdefault(r['uid'],{'uid':r['uid'],'name':r['name'],'nickname':r['nickname'],'contact':contact,'following':following,'avatar':r['avatar'] if contact or r['uid']==uid else None,'avatar_mime':r['avatar_mime'] if contact or r['uid']==uid else None,'items':[]})
@@ -80,7 +79,8 @@ def get(server,uid,action,q):
     source=__import__('vibe_sources').linked(d,uid,r)
     group['items'].append({'source_version':hashlib.sha256(json.dumps(source,sort_keys=True).encode()).hexdigest() if source else None,'id':r['id'],'created':r['created'],'expires':r['expires'],'caption':r['caption'] if visibility=='public' or r['uid']==uid else '', 'mime':r['mime'],'viewed':bool(v),'views':d.execute('SELECT COUNT(*) FROM vibe_views WHERE item=?',(r['id'],)).fetchone()[0] if r['uid']==uid else None})
    own=d.execute('SELECT id,name,nickname,avatar,avatar_mime FROM users WHERE id=?',(uid,)).fetchone()
-   return {'groups':list(groups.values()),'account':dict(own),'preferences':preferences(d,uid),'emoji':EMOJI}
+   ordered=sorted(groups.values(),key=lambda g:(all(i['viewed'] for i in g['items']),-max(i['created'] for i in g['items']),g['uid']))
+   return {'groups':ordered,'account':dict(own),'preferences':preferences(d,uid),'emoji':EMOJI}
   if action=='preview':
    r=item(d,uid,q.get('id',[''])[0])
    # Private media stays in the protected viewer, including thumbnails.
@@ -97,7 +97,10 @@ def get(server,uid,action,q):
    preview.thumbnail((160,160));out=io.BytesIO();preview.save(out,format='JPEG',quality=75)
    return {'data':base64.b64encode(out.getvalue()).decode(),'mime':'image/jpeg','expires':r['expires']}
   if action=='status':
-   r=item(d,uid,q.get('id',[''])[0]);source=__import__('vibe_sources').linked(d,uid,r);return {'active':True,'expires':r['expires'],'source':source if r['visibility']=='public' else None,'source_available':source is None or source['available']}
+   r=item(d,uid,q.get('id',[''])[0]);source=__import__('vibe_sources').linked(d,uid,r)
+   response={'active':True,'expires':r['expires'],'server_now':int(time.time()),'visibility':r['visibility'],'source':source if r['visibility']=='public' else None,'source_available':source is None or source['available']}
+   if r['visibility']=='public':response.update(cache_tag=cache_tag(r,source),relationship=__import__('social').public(d,uid,r['uid'])['relationship'],view_count=d.execute('SELECT COUNT(*) FROM vibe_views WHERE item=?',(r['id'],)).fetchone()[0] if r['uid']==uid else None)
+   return response
   if action=='viewers':
    r=item(d,uid,q.get('id',[''])[0])
    if r['uid']!=uid:raise PermissionError('Only the author can inspect viewers')
@@ -109,7 +112,10 @@ def media(server,uid,ident,protected=False):
   r=item(d,uid,ident)
   if r['visibility']=='private' and not protected:raise PermissionError('Open Private Vibe in the GuardianLab-protected Android viewer')
   source=__import__('vibe_sources').linked(d,uid,r);raw=__import__('vibe_sources').card(d,source) if source else r['media']
-  return {'data':base64.b64encode(raw).decode(),'mime':r['mime'],'expires':r['expires'],'server_now':int(time.time()),'caption':r['caption'],'uid':r['uid'],'visibility':r['visibility'],'source':source,'relationship':__import__('social').public(d,uid,r['uid'])['relationship']}
+  queue=[x['id'] for x in d.execute('SELECT id,uid,visibility,expires,1 AS media FROM vibe_items WHERE uid=? AND visibility=? AND expires>? AND media IS NOT NULL ORDER BY created,rowid',(r['uid'],r['visibility'],int(time.time()))) if allowed(d,uid,x)]
+  index=queue.index(r['id']) if r['id'] in queue else -1
+  metadata=d.execute('SELECT duration_ms,start_ms,end_ms FROM vibe_media_metadata WHERE item=?',(ident,)).fetchone()
+  return {'cache_tag':cache_tag(r,source) if r['visibility']=='public' else None,'data':base64.b64encode(raw).decode(),'mime':r['mime'],'expires':r['expires'],'server_now':int(time.time()),'caption':r['caption'],'uid':r['uid'],'visibility':r['visibility'],'source':source,'relationship':__import__('social').public(d,uid,r['uid'])['relationship'],'next_id':queue[index+1] if 0<=index<len(queue)-1 else None,'previous_id':queue[index-1] if index>0 else None,'view_count':d.execute('SELECT COUNT(*) FROM vibe_views WHERE item=?',(ident,)).fetchone()[0] if r['uid']==uid else None}|(dict(metadata) if metadata else {})
 
 def validate(b):
  try:raw=base64.b64decode(b.get('media',''),validate=True)
@@ -125,15 +131,23 @@ def validate(b):
   except Exception as e:raise ValueError('Use a complete JPEG or PNG photo') from e
   return raw,actual
  if mime.startswith('video/'):
-  import result_reviews
-  return raw,result_reviews.video_probe(raw)['mime']
+  import subprocess,sys
+  code='import json,sys;from media_processing import validate_vibe_video;print(json.dumps(validate_vibe_video(sys.stdin.buffer.read())))'
+  try:info=json.loads(subprocess.run([sys.executable,'-c',code],input=raw,capture_output=True,cwd=Path(__file__).parent,timeout=25,check=True).stdout)
+  except Exception as e:raise ValueError('Use a valid video up to 60 seconds and 20 MB, or split it in the editor') from e
+  return raw,info['mime']
  raise ValueError('Vibes support JPEG, PNG, MP4 and WebM')
 
 def post(server,uid,action,b):
  now=int(time.time())
- if action=='publish':raw,mime=validate(b)
+ edited=None
+ if action=='publish':
+  if b.get('media_id'):
+   with server.db() as d:edited=__import__('media_editor').render(d,uid,b['media_id'],'vibe');raw,mime=edited['data'],edited['mime']
+  else:raw,mime=validate(b)
  with server.db() as d:
   d.execute('BEGIN IMMEDIATE')
+  if action=='privacy':return __import__('vibe_privacy').save(d,uid,b)
   if action=='share':return __import__('vibe_sources').publish(d,uid,b)
   if action=='dismiss_prompt':
    kind=b.get('kind');source=b.get('source')
@@ -147,14 +161,6 @@ def post(server,uid,action,b):
    public=b.get('public_hours');private=b.get('private_hours')
    if type(public)!=int or public not in HOURS or type(private)!=int or private not in HOURS:raise ValueError('Choose 12, 24 or 48 hours independently')
    d.execute('INSERT INTO vibe_settings VALUES(?,?,?) ON CONFLICT(uid) DO UPDATE SET public_hours=excluded.public_hours,private_hours=excluded.private_hours',(uid,public,private));return {'ok':True}
-  if action in ('viewer_block','viewer_unblock','hide','unhide'):
-   target=str(b.get('target',''))
-   if target==uid or not d.execute('SELECT 1 FROM users WHERE id=?',(target,)).fetchone():raise ValueError('Choose another account')
-   table,cols=('vibe_blocked_viewers',(uid,target)) if action.startswith('viewer_') else ('vibe_hidden',(uid,target))
-   if action in ('viewer_block','hide'):d.execute('INSERT OR IGNORE INTO '+table+' VALUES(?,?,?)',cols+(now,))
-   elif action=='viewer_unblock':d.execute('DELETE FROM vibe_blocked_viewers WHERE owner=? AND target=?',cols)
-   else:d.execute('DELETE FROM vibe_hidden WHERE viewer=? AND owner=?',cols)
-   return {'ok':True}
   if action=='publish':
    visibility=b.get('visibility');client=str(b.get('client_id',''));caption=str(b.get('caption','')).strip()
    if visibility not in ('public','private') or not 8<=len(client)<=100 or len(caption)>500:raise ValueError('Invalid Vibe publication')
@@ -175,6 +181,7 @@ def post(server,uid,action,b):
      if not d.execute('SELECT 1 FROM contacts WHERE owner=? AND peer=?',(uid,target)).fetchone() or social.blocked(d,uid,target):raise PermissionError('Private Vibe recipients must be your available contacts')
    ident=uuid.uuid4().hex;expires=now+preferences(d,uid)[visibility+'_hours']*3600
    d.execute('INSERT INTO vibe_items VALUES(?,?,?,?,?,?,?,?,?,?)',(ident,uid,visibility,mime,raw,caption,now,expires,client,digest))
+   if edited:d.execute('INSERT INTO vibe_media_metadata VALUES(?,?,?,?,?)',(ident,edited['asset'],edited['duration_ms'],edited['start_ms'],edited['end_ms']))
    for target in set(audience) if visibility=='private' else ():
     d.execute('INSERT INTO vibe_audience VALUES(?,?)',(ident,target))
     __import__('account_notifications').add(d,target,'vibe','private','A contact shared a Private Vibe with you.',{'item':ident,'visibility':'private'})

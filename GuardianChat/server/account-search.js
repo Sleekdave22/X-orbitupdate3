@@ -37,15 +37,15 @@
  function closeSearch(){dialog?.close();dialog=null;jumped=false}
  function sync(){
   const chat=activeScreen==='chat'&&!!peer;
-  search.hidden=!account;search.setAttribute('aria-label',chat?'Search this chat':'Search accounts');search.title=chat?'Find messages in this conversation':'Find an account across X ORBIT';
-  el('homeBack').hidden=!account||homeMode==='chats'||activeScreen!=='contacts';
+  search.hidden=!account||!chat;search.setAttribute('aria-label',chat?'Search this chat':'Search accounts');search.title=chat?'Find messages in this conversation':'Find an account across X ORBIT';
+  el('homeBack').hidden=!account;el('chatSearch').hidden=!account||activeScreen!=='contacts'||homeMode==='search';
   el('myProfile').hidden=!account;el('menuOrbitPlay').hidden=!account;
   if(!chat)closeSearch();closeMenu();
  }
  toggle.onclick=()=>{const open=menu.hidden;menu.hidden=!open;toggle.setAttribute('aria-expanded',String(open));if(open)menu.querySelector('button:not([hidden])')?.focus()};
  for(const id of ['myProfile','openSettings']){const b=el(id),action=b.onclick;b.setAttribute('role','menuitem');b.onclick=e=>{closeMenu();action?.call(b,e)}}
  el('menuOrbitPlay').onclick=()=>location.assign('/gaming.html');
- el('homeBack').onclick=()=>chooseHome('chats');
+ el('homeBack').onclick=()=>{if(activeScreen==='profile')el('profileBack').click();else if(activeScreen==='chat')contacts();else if(homeMode!=='chats')chooseHome('chats');else if(history.length>1)history.back()};
  document.addEventListener('click',e=>{if(!menu.hidden&&!menu.contains(e.target)&&!toggle.contains(e.target))closeMenu()});
  document.addEventListener('keydown',e=>{if(menu.hidden)return;if(e.key==='Escape'){e.preventDefault();closeMenu(true)}else if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();const buttons=[...menu.querySelectorAll('button:not([hidden])')],i=buttons.indexOf(document.activeElement);buttons[e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+(e.key==='ArrowDown'?1:buttons.length-1))%buttons.length]?.focus()}});
  function openSearch(){

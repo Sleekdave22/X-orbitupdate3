@@ -1,50 +1,37 @@
-import urllib.error, unittest
-from test_vibes_activity import VibeTest
+import time,unittest,urllib.error
+import test_vibes_activity
 
-
-class VibePrivacyTest(VibeTest):
- def feed_ids(self,user,visibility='public'):
-  return [i['id'] for g in self.call('/vibe/feed?visibility='+visibility,token=user['token'])['groups'] for i in g['items']]
-
- def test_author_can_stop_one_person_from_viewing_every_vibe(self):
-  author=self.register('Author');friend=self.register('Friend');blocked=self.register('Blocked')
-  public=self.publish(author);private=self.publish(author,'private',audience=[friend['id'],blocked['id']])
-  self.assertIn(public['id'],self.feed_ids(blocked))
-  self.call('/vibe/viewer_block',{'target':blocked['id']},author['token'])
-  self.assertEqual(self.feed_ids(blocked),[]);self.assertEqual(self.feed_ids(blocked,'private'),[])
-  for path in ('/vibe/preview?id='+public['id'],'/vibe/media?id='+public['id']):
-   with self.assertRaises(urllib.error.HTTPError):self.call(path,token=blocked['token'])
-  with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/view',{'id':public['id']},blocked['token'])
-  with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/reply',{'id':public['id'],'text':'hi','client_id':'abcdefgh12'},blocked['token'])
-  self.assertIn(public['id'],self.feed_ids(friend));self.assertIn(private['id'],self.feed_ids(friend,'private'))
-  self.assertIn(public['id'],self.feed_ids(author))
-
- def test_unblock_restores_access_and_lists_are_private(self):
-  author=self.register('Author');other=self.register('Other');post=self.publish(author)
-  self.call('/vibe/viewer_block',{'target':other['id']},author['token'])
-  self.assertEqual([p['uid'] for p in self.call('/vibe/privacy',token=author['token'])['blocked']],[other['id']])
-  self.assertEqual(self.call('/vibe/privacy',token=other['token'])['blocked'],[])
-  self.call('/vibe/viewer_unblock',{'target':other['id']},author['token'])
-  self.assertIn(post['id'],self.feed_ids(other))
-
- def test_viewer_can_hide_someones_vibes_without_telling_them(self):
-  author=self.register('Author');viewer=self.register('Viewer');post=self.publish(author)
-  self.call('/vibe/hide',{'target':author['id']},viewer['token']);self.assertEqual(self.feed_ids(viewer),[])
-  self.assertIn(post['id'],self.feed_ids(author));self.assertEqual(self.call('/vibe/privacy',token=author['token'])['hidden'],[])
-  self.assertEqual([p['uid'] for p in self.call('/vibe/privacy',token=viewer['token'])['hidden']],[author['id']])
-  self.call('/vibe/unhide',{'target':author['id']},viewer['token']);self.assertIn(post['id'],self.feed_ids(viewer))
-
- def test_cannot_target_self_or_unknown_account(self):
-  author=self.register('Author')
-  for action in ('viewer_block','hide'):
-   for target in (author['id'],'nobody'):
-    with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/'+action,{'target':target},author['token'])
-
- def test_author_removes_own_post_and_it_disappears_for_everyone(self):
-  author=self.register('Author');viewer=self.register('Viewer');post=self.publish(author)
-  with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/remove',{'id':post['id']},viewer['token'])
-  self.call('/vibe/remove',{'id':post['id']},author['token'])
-  self.assertEqual(self.feed_ids(viewer),[]);self.assertEqual(self.feed_ids(author),[])
-
+class VibePrivacyTest(unittest.TestCase):
+ setUp=test_vibes_activity.VibeTest.setUp;tearDown=test_vibes_activity.VibeTest.tearDown;call=test_vibes_activity.VibeTest.call;register=test_vibes_activity.VibeTest.register;photo=test_vibes_activity.VibeTest.photo;publish=test_vibes_activity.VibeTest.publish
+ def privacy(self,u,**values):return self.call('/vibe/privacy',{'public_audience':'everyone','exclude':[],'mute':[]}|values,u['token'])
+ def test_excluded_viewer_cannot_read_any_capture_or_metadata(self):
+  a=self.register('Author');b=self.register('Viewer');c=self.register('Allowed');post=self.publish(a);private=self.publish(a,'private',audience=[b['id'],c['id']]);self.privacy(a,exclude=[b['id']])
+  for item in (post,private):
+   for path in ('/vibe/media?id='+item['id']+'&protected=1','/vibe/preview?id='+item['id'],'/vibe/item?id='+item['id'],'/vibe/status?id='+item['id']):
+    with self.assertRaises(urllib.error.HTTPError):self.call(path,token=b['token'])
+   for action in ('view','react','reply'):
+    with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/'+action,{'id':item['id'],'emoji':'🔥','text':'no','client_id':'blocked-reply'},b['token'])
+  self.assertEqual(self.call('/vibe/feed',token=b['token'])['groups'],[]);self.assertNotIn(a['id'],self.call('/navigation/state',token=b['token'])['vibes']);self.assertTrue(self.call('/vibe/media?id='+post['id'],token=c['token'])['data'])
+  with self.assertRaises(urllib.error.HTTPError):self.publish(a,'private',audience=[b['id']])
+ def test_public_audience_contacts_and_followers_enforced_for_direct_links(self):
+  a=self.register('Author');b=self.register('Contact');stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'});post=self.publish(a);self.privacy(a,public_audience='contacts')
+  self.assertTrue(self.call('/vibe/media?id='+post['id'],token=b['token'])['data'])
+  with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/media?id='+post['id'],token=stranger['token'])
+  self.privacy(a,public_audience='followers')
+  with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/media?id='+post['id'],token=b['token'])
+  with self.server.db() as d:d.execute("INSERT INTO social_follows VALUES(?,?,'accepted',?)",(b['id'],a['id'],int(time.time())))
+  self.assertTrue(self.call('/vibe/media?id='+post['id'],token=b['token'])['data'])
+ def test_muting_only_changes_own_feed_and_can_be_reversed(self):
+  a=self.register('Author');b=self.register('Viewer');self.publish(a);self.privacy(b,mute=[a['id']]);self.assertEqual(self.call('/vibe/feed',token=b['token'])['groups'],[]);self.assertNotIn(a['id'],self.call('/navigation/state',token=b['token'])['vibes'])
+  self.assertEqual(self.call('/vibe/privacy',token=a['token'])['mute'],[]);self.privacy(b);self.assertEqual(len(self.call('/vibe/feed',token=b['token'])['groups']),1)
+ def test_settings_ownership_validation_and_removal(self):
+  a=self.register('Author');b=self.register('Other');self.privacy(a,exclude=[b['id']]);self.assertEqual(self.call('/vibe/privacy',token=a['token'])['exclude'],[b['id']]);self.assertEqual(self.call('/vibe/privacy',token=b['token'])['exclude'],[])
+  for body in ({'public_audience':'invalid'},{'exclude':[a['id']]},{'exclude':['unknown']},{'mute':'not-list'}):
+   with self.assertRaises(urllib.error.HTTPError):self.privacy(a,**body)
+  self.assertEqual(self.call('/vibe/privacy',token=a['token'])['exclude'],[b['id']])
+ def test_feed_newest_first_with_viewed_groups_at_end(self):
+  a=self.register('Older');b=self.register('Newer');viewer=self.register('Viewer');old=self.publish(a);new=self.publish(b)
+  with self.server.db() as d:d.execute('UPDATE vibe_items SET created=created-10 WHERE id=?',(old['id'],))
+  self.assertEqual([g['uid'] for g in self.call('/vibe/feed',token=viewer['token'])['groups']],[b['id'],a['id']]);self.call('/vibe/view',{'id':new['id']},viewer['token']);self.assertEqual([g['uid'] for g in self.call('/vibe/feed',token=viewer['token'])['groups']],[a['id'],b['id']])
 
 if __name__=='__main__':unittest.main()

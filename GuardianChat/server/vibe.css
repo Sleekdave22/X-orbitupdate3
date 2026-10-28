@@ -5,21 +5,24 @@ body>header{gap:10px;align-items:center}body>header h1{font-size:22px;margin:0;d
 dialog#vibeViewer{background:#080b13!important;color:#f4f5fa!important;border:0!important;border-radius:0!important}#vibeReplyText{background:#20263a!important;color:#f4f5fa!important;border:0!important;border-radius:22px!important;outline:none!important;box-shadow:none!important}#vibeReplyText::placeholder{color:#adb4c5!important}#vibeViewer::backdrop{background:#000!important}
 
 #sendVibeReply{border-radius:50%!important}
+.vibe-own-row{display:flex;align-items:center;gap:8px}.vibe-own-row #ownVibe{flex:1;min-width:0}#addVibeCamera{background:transparent!important;border:0!important;box-shadow:none!important;width:36px;min-width:36px;min-height:36px;padding:4px!important;color:var(--ink)!important}#vibeCompose>summary{display:none!important}#vibePendingPreview img,#vibePendingPreview video{display:block;max-width:100%;max-height:28dvh;object-fit:contain;border-radius:12px}
+#vibeProgress button{position:relative;overflow:hidden;background:#465067!important}#vibeProgress button::after{content:'';position:absolute;inset:0;background:#f4f5fa;transform:scaleX(var(--vibe-fill,0));transform-origin:left center}#vibeProgress button[aria-current=true]{background:#465067!important}#vibeTimeRemaining{font-size:11px;color:#adb4c5;font-variant-numeric:tabular-nums}#vibeMedia{touch-action:pan-x;user-select:none}#vibeMedia img{-webkit-user-drag:none}#vibeViewer::backdrop{background:rgba(0,0,0,var(--vibe-backdrop-opacity,1))!important}
 .vibe-avatar .vibe-upload-count{position:absolute;right:-3px;bottom:-3px;width:auto;min-width:20px;height:20px;padding:0 4px;border:2px solid var(--card,#131932);border-radius:50%;background:#e53945;color:#fff;font-size:10px;line-height:16px;font-weight:700;z-index:1}.vibe-source-actions{display:flex;gap:5px;flex-wrap:wrap}.vibe-source-actions button{font-size:11px!important;min-height:30px;padding:5px 8px!important}.vibe-viewer-tools:has(.vibe-source-actions:not(:empty)){flex-wrap:wrap}.vibe-source-actions:not(:empty){flex-basis:100%}#vibeSettingsButton{background:transparent!important;border:0!important;box-shadow:none!important;font-size:21px!important;padding:4px!important;min-width:32px}#vibeSettings{max-width:min(420px,90vw)}
 
-/* My Vibe is the post itself plus a + button; there is no label row and no camera button. */
-#vibeCompose>summary{display:none}
-#vibeCompose[open]{border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--card);margin:6px 0 12px}
-.vibe-own{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px}
-.vibe-own-post{background:transparent!important;border:0!important;padding:2px!important;min-height:0!important;box-shadow:none!important;border-radius:50%}
-.vibe-add{width:48px;height:48px;min-width:48px;padding:0!important;border-radius:50%!important;font-size:28px;line-height:1;display:grid;place-items:center;background:var(--violet,#7c3aed)!important;color:#fff!important;border:0!important}
-/* List of other people: unviewed first, newest first, then a line, then viewed. */
-.vibe-item{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.vibe-item>.vibe-row{flex:1;min-width:0;width:auto}
-.vibe-more{width:44px;min-width:44px;height:44px;padding:0!important;background:transparent!important;border:0!important;color:var(--muted)!important;font-size:22px;box-shadow:none!important}
-.vibe-menu{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;padding:2px 4px 10px 70px}.vibe-menu[hidden]{display:none}.vibe-menu button{font-size:12px!important;min-height:36px!important;padding:6px 12px!important}
-.vibe-viewed-line{display:flex;align-items:center;gap:10px;margin:10px 0 6px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.vibe-viewed-line::before,.vibe-viewed-line::after{content:"";flex:1;border-top:1px solid var(--line,#64748b55)}
-.vibe-delete{background:transparent!important;color:var(--coral,#ff7185)!important;border:1px solid var(--coral,#ff7185)!important}
-/* Privacy lists */
-#vibePrivacy{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}#vibePrivacy h2{font-size:15px;margin:12px 0 4px}.vibe-note{font-size:12px;color:var(--muted);margin:2px 0 8px}
-.vibe-people{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px;font-size:13px}.vibe-people li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 8px;border:1px solid var(--line);border-radius:12px}.vibe-people button{font-size:12px!important;min-height:34px!important;padding:4px 10px!important}
-.vibe-pick{display:flex;gap:8px}.vibe-pick select{flex:1;min-width:0;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:0 10px}
+.vibe-own-post{background:transparent!important;border:0!important;padding:0!important;min-width:56px;flex:none}.vibe-seen-divider{border-top:1px solid var(--line);padding:7px 0 3px;margin-top:8px;font-size:11px;color:var(--muted)}#vibePrivacy label:has(input[type=checkbox]){display:flex;gap:8px;align-items:center}#vibePrivacy input[type=checkbox]{width:auto}
+
+/* Compact rows, media ending at the reply line, controls floating over media. */
+#vibeFeed{gap:0}.vibe-row{min-height:64px;padding:4px 2px!important;border-bottom:1px solid var(--line,#64748b55)!important}
+.vibe-viewer-stage{position:relative;flex:1;min-height:0;overflow:hidden;display:flex}
+.vibe-viewer-stage #vibeMedia{height:100%;width:100%;position:absolute;inset:0}
+.vibe-viewer-overlays{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:8px 14px;background:linear-gradient(transparent,#080b13d9);pointer-events:none}
+.vibe-viewer-overlays :is(button,#vibeViewers){pointer-events:auto}
+.vibe-viewer-bottom{padding-top:3px;background:#080b13}
+#sendVibeReply{background:var(--personal-bubble,#7c3aed)!important;color:var(--personal-ink,#fff)!important}
+
+/* Count overlays remain complete circles, outside the preview's crop boundary. */
+.vibe-own-post,.vibe-row,.vibe-avatar{overflow:visible!important}
+.vibe-avatar .vibe-upload-count{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:max-content;min-width:20px;max-width:none;height:20px;padding:0 4px;border:0;border-radius:999px;background:#e53945;color:#fff;font:700 10px/20px system-ui;white-space:nowrap;overflow:visible}
+
+/* My Vibe is the post itself: ring thumbnail with the + button, no caption line. */
+#ownVibe .vibe-row-copy{display:none}

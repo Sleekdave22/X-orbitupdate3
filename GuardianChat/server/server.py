@@ -71,6 +71,8 @@ class ChatServer(ThreadingHTTPServer):
         market.init(self)
         __import__("account_notifications").init(self)
         __import__("vibes").init(self)
+        __import__('navigation_state').init(self)
+        __import__('media_editor').init(self)
         __import__("wallet").init(self)
         __import__("account_invites").init(self)
         __import__("stream_lifecycle").init(self)
@@ -95,6 +97,9 @@ class ChatServer(ThreadingHTTPServer):
         except Exception as error:print('Test wallet maintenance failed: '+type(error).__name__,flush=True)
         try:__import__('vibes').purge(self)
         except Exception as error:print('Vibe maintenance deferred: '+type(error).__name__,flush=True)
+        try:
+            with self.db() as db:__import__('media_editor').purge(db)
+        except Exception as error:print('Editor maintenance deferred: '+type(error).__name__,flush=True)
         try:
             with self.db() as db:
                 db.execute('BEGIN IMMEDIATE');__import__('market_connections').expire(db)
@@ -220,7 +225,7 @@ class Handler(BaseHTTPRequestHandler):
                 data=(Path(__file__).parent/parsed.path[1:]).read_bytes();self.send_response(200);self.send_header("Content-Type","image/svg+xml");self.send_header("Cache-Control","no-store");self.send_header("Content-Length",str(len(data)));self.end_headers();self.wfile.write(data);return
             if parsed.path in ('/branding/orbit-icon-plain.png','/branding/XOrbit-app-icon-1024.png','/branding/XOrbit-logo-dark.png','/branding/XOrbit-logo-light.png','/branding/orbit-wallpaper.png','/branding/orbit-wallpaper-v2.png','/branding/settings-dark.png','/branding/settings-light.png','/branding/orbit-icon-light.png'):
                 data=(Path(__file__).parent/parsed.path[1:]).read_bytes();self.send_response(200);self.send_header('Content-Type','image/png');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
-            if parsed.path in ('/market-chat.js','/vibe-share.js','/vibe.html','/vibe.js','/vibe.css','/activity-ui.js','/orbit-reveal.js','/orbit-embed.js','/orbit-shell.js','/orbit-shell.css','/orbit-navigation.js','/navigation.css','/private-results.js','/evidence-camera.js','/camera-sources.js','/market.html','/market.js','/market.css','/calls.js','/call.html','/call-screen.js','/call-screen.css','/gaming.html','/gaming.js','/gaming.css','/studio.js','/result-room.js','/orbit-theme.js','/orbit-theme.css','/social.js','/profile-tabs.css','/social-spaces.js','/phase-b.js','/form-panels.js','/form-panels.css','/scheduling.js','/wallet.html','/wallet.js','/live-room-ui.js','/stream-relay-ui.js','/invitations.js','/join.js','/account-search.js','/sponsored-ui.js','/personalization.js','/personalization.json'):
+            if parsed.path in ('/orbit-reveal.js','/media-editor.js','/media-editor.css','/orbit-switcher.js','/market-types.js','/market-chat.js','/module-navigation.js','/vibe-motion.js','/vibe-cache.js','/vibe-share.js','/vibe.html','/vibe.js','/vibe.css','/activity-ui.js','/orbit-navigation.js','/navigation.css','/private-results.js','/evidence-camera.js','/camera-sources.js','/market.html','/market.js','/market.css','/calls.js','/call.html','/call-screen.js','/call-screen.css','/gaming.html','/gaming.js','/gaming.css','/studio.js','/result-room.js','/orbit-theme.js','/orbit-theme.css','/social.js','/profile-tabs.css','/social-spaces.js','/phase-b.js','/form-panels.js','/form-panels.css','/scheduling.js','/wallet.html','/wallet.js','/live-room-ui.js','/stream-relay-ui.js','/invitations.js','/join.js','/account-search.js','/sponsored-ui.js','/personalization.js','/personalization.json'):
                 data=(Path(__file__).parent/parsed.path[1:]).read_bytes();self.send_response(200);self.send_header('Content-Type','application/json' if parsed.path.endswith('.json') else 'text/javascript' if parsed.path.endswith('.js') else 'text/css' if parsed.path.endswith('.css') else 'text/html');self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
             if parsed.path=='/guardianchat-ca.crt':
                 data=(Path(__file__).parent.parent/'chat/src/main/res/raw/guardianchat_local_ca.crt').read_bytes();self.send_response(200);self.send_header('Content-Type','application/x-x509-ca-cert');self.send_header('Content-Disposition','attachment; filename=guardianchat-ca.crt');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
@@ -280,6 +285,10 @@ class Handler(BaseHTTPRequestHandler):
                 try:self.reply(200,social.get(self.server,uid,parsed.path.split('/')[-1],parse_qs(parsed.query)))
                 except PermissionError as e:self.reply(403,{'error':str(e)})
                 return
+            if parsed.path=='/navigation/state':
+                self.reply(200,__import__('navigation_state').get(self.server,uid));return
+            if parsed.path.startswith('/media-editor/'):
+                self.reply(200,__import__('media_editor').get(self.server,uid,parsed.path.split('/')[-1],parse_qs(parsed.query)));return
             if parsed.path=='/vibe/media':
                 q=parse_qs(parsed.query);self.reply(200,__import__('vibes').media(self.server,uid,q.get('id',[''])[0],q.get('protected',['0'])[0]=='1'));return
             if parsed.path.startswith('/vibe/'):
@@ -465,6 +474,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.reply(201,{'id':uid,'token':token,'name':name,'nickname':nickname});return
             uid=self.user()
             if not self.server.allow_request(uid):self.reply(429,{'error':'Too many requests. Please wait a moment.'});return
+            if self.path.startswith('/media-editor/'):
+                try:self.reply(200,__import__('media_editor').post(self.server,uid,self.path.split('/')[-1],body))
+                except PermissionError as e:self.reply(403,{'error':str(e)})
+                except ValueError as e:self.reply(400,{'error':str(e)})
+                return
+            if self.path=='/navigation/calls-seen':
+                try:self.reply(200,__import__('navigation_state').calls_seen(self.server,uid,body))
+                except PermissionError as e:self.reply(403,{'error':str(e)})
+                return
             if self.path=='/invitations/reset':
                 self.reply(200,__import__('account_invites').getown(self.server,uid,rotate=True));return
             if self.path.startswith('/leagues/'):

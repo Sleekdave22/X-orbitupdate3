@@ -11,7 +11,7 @@ def settings(d):return DEFAULTS|{r['key']:json.loads(r['value']) for r in d.exec
 def audit(d,uid,action,target,reason,before,after):d.execute('INSERT INTO market_admin_audit(actor,action,target,reason,before_value,after_value,created) VALUES(?,?,?,?,?,?,?)',(uid,action,target,reason,json.dumps(before),json.dumps(after),int(time.time())))
 def authorize(d,uid):
  from market import is_admin
- if not is_admin(d,uid):raise ValueError('Market administration is restricted')
+ if not is_admin(d,uid):raise ValueError('Plaza administration is restricted')
 
 def get(server,uid):
  with server.db() as d:

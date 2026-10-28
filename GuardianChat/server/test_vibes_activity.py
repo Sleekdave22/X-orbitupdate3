@@ -34,6 +34,13 @@ class VibeTest(unittest.TestCase):
   self.assertEqual(viewer['uid'],b['id']);self.assertEqual(viewer['opens'],2);self.assertEqual(viewer['emoji'],'🔥');self.assertLessEqual(viewer['first_seen'],viewer['last_seen'])
   with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/viewers?id='+r['id'],token=b['token'])
   self.assertEqual(len(self.call('/notifications?category=vibe',token=a['token'])['notifications']),1)
+ def test_private_navigation_and_owner_view_count(self):
+  a=self.register('Author');b=self.register('Viewer');c=self.register('Other')
+  first=self.publish(a,'private',audience=[b['id']]);hidden=self.publish(a,'private',audience=[c['id']]);last=self.publish(a,'private',audience=[b['id']])
+  self.call('/vibe/view',{'id':first['id']},b['token'])
+  own=self.call('/vibe/media?id='+first['id']+'&protected=1',token=a['token']);self.assertEqual(own['view_count'],1)
+  allowed=self.call('/vibe/media?id='+first['id']+'&protected=1',token=b['token']);self.assertEqual(allowed['next_id'],last['id']);self.assertIsNone(allowed['view_count'])
+  reverse=self.call('/vibe/media?id='+last['id']+'&protected=1',token=b['token']);self.assertEqual(reverse['previous_id'],first['id']);self.assertNotEqual(reverse['previous_id'],hidden['id'])
  def test_expiry_denies_every_action_and_purges_bytes(self):
   a=self.register('Author');b=self.register('Viewer');r=self.publish(a)
   with self.server.db() as d:d.execute('UPDATE vibe_items SET expires=? WHERE id=?',(int(time.time())-1,r['id']))

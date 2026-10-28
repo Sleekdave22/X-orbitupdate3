@@ -1,5 +1,13 @@
 .orbit-bottom-nav{display:flex!important;position:fixed;bottom:max(5px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(940px,calc(100vw - 24px));box-sizing:border-box;z-index:30;gap:4px;padding:6px!important;background:var(--card,#131932)!important;border-radius:16px;margin-top:auto}
 .orbit-bottom-nav[hidden]{display:none!important}
+.orbit-bottom-nav button,[data-unread-chat]{position:relative}
+.chat-unread-badge{position:absolute;right:4px;top:3px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:20px;background:#ed4b71;color:#fff;font:600 10px/16px system-ui;text-align:center;pointer-events:none;z-index:2}
+.orbit-module-switcher{display:flex!important;gap:6px;flex-wrap:wrap;margin:5px 0 0!important;padding:0!important}
+.orbit-module-switcher button{display:inline-flex!important;gap:5px;align-items:center;position:relative;min-height:34px!important;padding:5px 9px!important;font-size:11px!important;border:0!important;border-radius:12px!important;background:var(--violet,#7c3aed)!important;color:#fff!important}
+.orbit-module-switcher img{width:23px!important;height:23px!important;object-fit:contain;content:normal!important}
+.avatar.vibe-has-content{position:relative;overflow:visible!important}.avatar.vibe-has-content>img{border-radius:50%}
+.vibe-profile-indicator{position:absolute!important;right:-3px;bottom:-3px;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;z-index:2;border-radius:50%!important}
+.vibe-profile-indicator img{display:block;width:18px!important;height:18px!important;object-fit:contain}
 .orbit-bottom-nav button{flex:1;min-width:0;min-height:54px!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px!important;font-size:11px!important;border:0!important;background:var(--card2,#202546)!important;color:var(--ink,#f4f5fa)!important}
 .orbit-bottom-nav button[aria-selected=true]{background:var(--violet,#7c3aed)!important;color:#fff!important}
 .orbit-bottom-nav img{width:26px;height:26px;object-fit:contain;flex:none}
@@ -37,3 +45,77 @@ body:has(.orbit-bottom-nav:not([hidden])) main{padding-bottom:86px!important}
 .result-chat-composer label{flex:1;min-width:0;font-size:0;margin:0!important}
 .result-chat-composer input{min-height:42px!important;height:42px;font-size:13px!important;margin:0!important}
 .result-chat-composer button{width:44px;height:44px;min-width:44px;padding:4px!important;font-size:18px!important;margin:0!important;border-radius:50%}
+
+/* Selection colour follows this account's message pair, without recolouring body text. */
+:is(.orbit-bottom-nav,.mtabs,.cats) button,main>nav button[data-tab],.social-panel .profile-nav-tab,#publicVibe,#privateVibe{background:color-mix(in srgb,var(--personal-received,#202546) 35%,var(--bg,#0b1520))!important;color:var(--ink)!important;border-color:transparent!important}
+:is(.orbit-bottom-nav,.mtabs,.cats) button:is([aria-selected=true],[aria-pressed=true],.selected),main>nav button[data-tab].selected,.social-panel .profile-nav-tab.selected,#publicVibe[aria-pressed=true],#privateVibe[aria-pressed=true]{background:var(--personal-bubble,var(--violet,#7c3aed))!important;color:var(--personal-ink,#fff)!important}
+.arena-account-row :is(#gamingTab,#marketTab),.orbit-module-switcher button,#vibePlay,#vibeMarket{background:var(--personal-bubble,var(--violet,#7c3aed))!important;color:var(--personal-ink,#fff)!important;border-color:transparent!important}
+
+/* Shared swipe strip, preserving the existing three destinations and their icons. */
+.orbit-swipe-tabs{position:relative;display:flex!important;flex-wrap:nowrap!important;gap:4px!important;overflow:visible!important;touch-action:pan-y;padding:0 0 6px!important;isolation:isolate}
+.arena-account-row.orbit-swipe-tabs :is(#gamingTab,#marketTab,#moduleChat),.orbit-module-switcher.orbit-swipe-tabs>button{flex:1 1 0!important;width:0!important;min-width:0!important;min-height:40px!important;white-space:nowrap;font-size:12px!important;gap:6px!important;margin:0!important;padding:7px 5px!important;background:color-mix(in srgb,var(--personal-received,#202546) 35%,var(--bg,#0b1520))!important;color:var(--ink)!important;border:0!important}
+.arena-account-row.orbit-swipe-tabs :is(#gamingTab,#marketTab,#moduleChat)[aria-selected=true],.orbit-module-switcher.orbit-swipe-tabs>button[aria-selected=true]{background:var(--personal-bubble,#7c3aed)!important;color:var(--personal-ink,#fff)!important}
+.orbit-swipe-tabs .orbit-shared-line{position:absolute;left:0;bottom:0;width:33.333333%;height:3px;background:var(--personal-bubble,#7c3aed);border-radius:4px;pointer-events:none;will-change:transform}.orbit-swipe-tabs img{width:23px!important;height:23px!important;object-fit:contain}
+body[data-orbit-module=market]{min-height:100vh;min-height:100dvh;background-size:cover!important;background-repeat:no-repeat!important}
+.brand-header,body[data-orbit-module=play]>header,body[data-orbit-module=market]>header{background:transparent!important;border:0!important;box-shadow:none!important}
+body>header:has(.orbit-swipe-tabs){display:flex;flex-wrap:wrap;gap:9px;padding:12px}body>header>.orbit-swipe-tabs{order:10;flex:1 0 100%;margin:0!important}body>header:has(.orbit-swipe-tabs)>div{flex:1;min-width:0}
+#marketActivityBell{background:transparent!important;border:0!important;border-radius:50%;width:38px;height:38px;min-width:38px;padding:6px!important;margin-left:0!important;color:var(--cyan-text)!important;display:grid;place-items:center;flex:none}
+#marketActivityBell[aria-expanded=true]{background:color-mix(in srgb,var(--personal-received,#202546) 55%,var(--card,#131932))!important}
+.plaza-notification-panel{position:fixed;right:10px;width:min(440px,calc(100vw - 20px));height:50dvh;max-height:calc(100dvh - 100px);z-index:1200;padding:15px;border:1px solid var(--line);border-radius:16px;overflow:auto;background:var(--orbit-settings-wallpaper) center/cover;color:var(--ink);box-shadow:0 12px 35px #0005;transform-origin:top right;animation:orbit-notice-in .2s ease-out}.plaza-notification-panel h2{font-size:17px;margin:0 0 8px}.plaza-notification-panel .orbit-notification-item{font-size:12px;background:color-mix(in srgb,var(--card) 75%,transparent)}
+@keyframes orbit-notice-in{from{opacity:0;transform:scale(.3) translateY(-12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@media(prefers-reduced-motion:reduce){.plaza-notification-panel{animation:none}.orbit-shared-line{transition:none!important}}
+
+/* Widen artwork only; keep tab boxes, icon heights and labels unchanged. */
+.orbit-bottom-nav .orbit-tab-artwork{position:relative;display:flex;align-items:center;justify-content:center;width:28.08px;height:26px;flex:none;line-height:0;overflow:visible}
+.orbit-bottom-nav .orbit-tab-artwork>img{width:26px;height:26px;transform:scaleX(1.08);flex:none}
+.orbit-bottom-nav .orbit-tab-artwork>.chat-unread-badge{right:-5px;top:-4px;line-height:16px}
+
+/* One viewport position for the three module selectors; page content stays separate. */
+body.orbit-module-shell>main{width:100%;max-width:none;box-sizing:border-box;padding:134px 8px 86px!important;margin:0!important}
+body.orbit-module-shell :is(.brand-header),body.orbit-module-shell>header{position:fixed!important;left:9px;right:9px;top:4px;height:66px;min-height:66px;box-sizing:border-box;margin:0!important;padding:4px 0!important;z-index:31;background:transparent!important}
+body.orbit-module-shell .orbit-module-switcher{position:fixed!important;left:9px;right:9px;top:76px;width:auto!important;height:48px;box-sizing:border-box;margin:0!important;z-index:31;flex-basis:auto!important;order:initial!important}
+.orbit-module-switcher[hidden]{display:none!important}
+html.native-module-shell body.orbit-module-shell>main{padding:8px 0 30px!important}
+html.native-module-shell body.orbit-module-shell>header{position:static!important;height:auto;min-height:0;padding:0!important;margin:0!important;width:100%;display:flex}
+html.native-module-shell body.orbit-module-shell>header h1,html.native-module-shell body.orbit-module-shell>header>div>p,html.native-module-shell .orbit-module-switcher{display:none!important}
+
+.orbit-module-switcher.orbit-swipe-tabs>button{justify-content:center!important;align-items:center!important}
+/* The selector itself never shifts or changes height between modules. */
+body.orbit-module-shell .orbit-module-switcher{align-items:flex-start!important;padding:0 0 6px!important}
+.orbit-module-switcher.orbit-swipe-tabs>button{height:42px!important;min-height:42px!important;max-height:42px!important;box-sizing:border-box;align-self:flex-start}
+body.orbit-module-shell>header>div:not(#topGamingProfile){flex:1;min-width:0}
+body.orbit-module-shell #topGamingProfile{max-height:66px;align-self:flex-start}
+body.orbit-module-shell #topGamingProfile .gaming-account-handle{font-size:11px;line-height:14px}
+body.orbit-module-shell #topGamingProfile .gaming-profile-identity{min-height:0!important;padding:3px 6px!important}
+body.orbit-module-shell #topGamingProfile .rank-avatar{width:32px;height:32px}
+body.orbit-module-shell #topGamingProfile .gaming-profile-identity strong{font-size:12px}
+body.orbit-module-shell #welcome{z-index:100}
+html.native-module-shell body.orbit-module-shell #topGamingProfile{max-height:none}
+
+/* Approved header/Search layout; the shared module strip keeps its coordinates. */
+.brand-header>h1{flex:1;min-width:0;margin-right:auto}
+#homeBack,body.orbit-module-shell>header>#back{width:28px;min-width:28px;height:44px;flex:0 0 28px;padding:0!important;margin:0!important;background:transparent!important;border:0!important;font-size:28px!important;color:var(--cyan-text)!important}
+body.orbit-module-shell>header,.brand-header{gap:8px!important}
+#playSettings,#marketSettings{width:32px;height:44px;min-width:32px;flex:0 0 32px;margin-left:auto!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:4px!important;color:var(--cyan-text)!important}
+#playSettings,#marketSettings{order:100}
+#marketActivityBell{order:90}
+#chatSearch{padding:8px;margin:0 0 8px;border:1px solid var(--line);border-radius:12px}
+#chatSearch>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:11px;background:var(--card2);font-size:12px}
+#chatSearch>summary::before{content:'⌕';font-size:18px}
+#chatSearch input{margin-bottom:0}
+html.native-module-shell :is(#playSettings,#marketSettings){display:none!important}
+html.native-module-shell body.orbit-module-shell>header>#back{display:none!important}
+@media(max-width:600px){body.orbit-module-shell #topGamingProfile{flex:0 1 38%;width:38%;min-width:0}body.orbit-module-shell>header h1{font-size:18px}}
+
+body.orbit-module-shell>main>#chatSearch{grid-column:1/-1;grid-row:1;width:100%;min-width:0;box-sizing:border-box;background:var(--card)}
+#chatSearch:not([open])>#addContact{display:none!important}
+
+/* Keep Chat's existing four-tab geometry on Vibe and My Orbit, from first paint. */
+.orbit-bottom-nav{width:min(940px,calc(100vw - 16px));height:68px;min-height:68px;max-height:68px;overflow:visible!important;border:0!important}
+.orbit-bottom-nav>button{height:56px!important;min-height:56px!important;max-height:56px!important;box-sizing:border-box;line-height:20px!important;overflow:visible!important}
+.orbit-bottom-nav .chat-unread-badge{display:flex!important;align-items:center;justify-content:center;min-width:16px;width:max-content;height:16px;padding:0 4px;box-sizing:border-box;max-width:none;border:0!important;border-radius:999px!important;background:#e53945!important;color:#fff!important;font:600 10px/16px system-ui!important;white-space:nowrap;overflow:visible!important}
+html.orbit-native #vibeFooter{display:none!important}
+
+/* Chat, Play and Plaza share the same solid "clean" top band as Vibe. */
+body.orbit-module-shell :is(.brand-header),body.orbit-module-shell>header{background:var(--card,#131932)!important;border-bottom:1px solid var(--line);border-radius:0 0 18px 18px;left:0!important;right:0!important;top:0!important;height:70px!important;padding:6px 18px 4px!important}
+html.native-module-shell body.orbit-module-shell>header{background:transparent!important;border:0;border-radius:0}

@@ -30,8 +30,12 @@ Written for Android, backend, database, security and infrastructure reviewers. E
 - Confirmed full table scan on `market_listing_meta` by category. Added `market_listing_meta_category(category_id,state)`. Measured on 30,000 rows: selective lookup 1.18 ms to 0.003 ms; broad category listing 2.02 ms to 1.73 ms (small gain; the main benefit is selective lookups and the new Demand seller query). The query plans for messages, sessions, notifications and the Plaza listing join already use indexes.
 - No destructive migration; all new tables use `IF NOT EXISTS`.
 
-### Earlier in the same branch
-Swipe shell (Play | Chat | Plaza), Plaza rename, borderless bell and expanding panel, open-from-icon animation, My Orbit rename, Vibe layout and Vibe privacy (viewer blocking and hiding, server enforced, `test_vibe_privacy.py`). Removed `test_rating.py`, which tested four functions no longer in the app.
+### Integration with Codex's version 39 (this branch, `integrate/codex-v39`)
+This branch merges Codex's `feature/vibe-timed-navigation` (v33-v39) into the earlier work. Where both sides built the same thing, **Codex's deployed version was kept** and my duplicate removed: Chat/Play/Plaza swipe switcher, Vibe layout, + button, Vibe privacy (viewer hiding, muting, public audience), Plaza bell panel. Kept from this session: Demand and Hot Demand, the opening animation (`orbit-reveal.js`), the request limits, the listing category index, the solid top band for Chat, Play and Plaza, and My Vibe shown as the post ring only. Wording uses OrbitPlaza and My Orbit. Codex's crop/trim media editor, nav badges, tap controls, Vibe cache and Plaza listing types are included unchanged. `X-orbitupdate` itself was only read, never written.
+Tests here: 339 Python tests pass; `test_media_processing` and `test_media_editor` could not run because the `av` video package cannot be installed in this workspace (no package access); all JS tests pass.
+
+### Earlier in the same branch (before the merge)
+Plaza rename and My Orbit rename. (My own swipe shell, Vibe layout and Vibe privacy were replaced by Codex's equivalents in the merge.) Removed `test_rating.py`, which tested four functions no longer in the app.
 
 ## 3. Not done, and why
 | Item | Status |
@@ -52,7 +56,7 @@ Assumptions: first launch 5,000 registered accounts, 1,000 daily active, about 2
 
 ## 5. Recommended next priorities
 1. Decide on phone verification provider and the wallet eligibility rules; then enforce on the backend.
-2. Android parity for the swipe tabs, Plaza rename and Demand (see `ANDROID_PARITY_HANDOFF_PLAZA_SWIPE.md`) and a real Android build.
+2. Android parity for Demand (the WebView page already has it), the solid top band and the opening animation, plus a real Android build.
 3. Add Skills and Jobs to Plaza if still wanted (category catalogue change).
 4. Real-device test with two or more accounts on a hosted test server.
 5. Plan SQLite to PostgreSQL before sustained concurrent writes grow; measure first.

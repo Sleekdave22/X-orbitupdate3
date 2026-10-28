@@ -28,7 +28,7 @@ def resolve(d,viewer,owner,kind,source,game='',publishing=False,visibility='priv
   if a['state'] not in ('ACTIVE','RESERVED','SOLD') or a['expires']<=int(time.time()) or restricted and restricted[0]:raise ValueError('Listing unavailable')
   if publishing and a['state']!='ACTIVE':raise ValueError('Publish an active listing before sharing it')
   price=(a['currency']+' '+format(a['amount_minor']/(1 if a['currency']=='JPY' else 100),',.2f')) if a['amount_minor'] is not None else a['price']
-  result.update(title=a['title'],detail=a['description'][:240]+('…' if len(a['description'])>240 else ''),price=price,status=a['state'],version=str(a['revision']),image=a['images'][0] if a['images'] else None,url='/market.html?listing='+source,can_message=a['state']=='ACTIVE')
+  result.update(listing_type=a['listing_type'],title=a['title'],detail=a['description'][:240]+('…' if len(a['description'])>240 else ''),price=price,status=a['state'],version=str(a['revision']),image=a['images'][0] if a['images'] else None,url='/market.html?listing='+source,can_message=a['state']=='ACTIVE')
   return result
  if kind not in KINDS:raise ValueError('Unknown Vibe source')
  m=game_identities.meta(d,owner,game)

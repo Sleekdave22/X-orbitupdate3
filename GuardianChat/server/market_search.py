@@ -22,26 +22,41 @@ def search(d,uid,items,q):
  arg=lambda n,default='':q.get(n,[default])[0]
  prefs=d.execute('SELECT * FROM market_discovery WHERE uid=?',(uid,)).fetchone()
  mode=arg('location',prefs['mode'] if prefs else 'worldwide');country=arg('country',prefs['country'] if prefs else '');city=arg('city',prefs['city'] if prefs else '')
- if mode not in ('near','country','worldwide'):raise ValueError('Choose Near Me, My Country or Worldwide')
- if mode!='worldwide' and not country or mode=='near' and not city:raise ValueError('Set your country and locality for this location search')
- if mode!='worldwide':items=[v for v in items if v['country']==country]
+ if mode not in ('near','country','worldwide','distance'):raise ValueError('Choose a valid location search')
+ if mode in ('near','country') and not country or mode=='near' and not city:raise ValueError('Set your country and locality for this location search')
+ if mode in ('near','country'):items=[v for v in items if v['country']==country]
  if mode=='near':items=[v for v in items if tokens(v['city'])==tokens(city)]
+ items=__import__('market_location').refine(items,q,mode)
  if arg('category'):items=[v for v in items if v['category_id']==arg('category')]
  if arg('subcategory'):items=[v for v in items if v['subcategory']==arg('subcategory')]
  if arg('condition'):items=[v for v in items if v['condition']==arg('condition')]
+ kind=arg('listing_type')
+ if kind:
+  if kind not in __import__('market_listing_types').TYPES:raise ValueError('Choose a valid listing type')
+  items=[v for v in items if v['listing_type']==kind]
  currency=arg('currency')
  if currency:items=[v for v in items if v['currency']==currency]
+ sort=arg('sort','relevance')
+ if sort not in ('relevance','price_asc','price_desc','distance'):raise ValueError('Choose relevance, price order or nearest first')
+ if sort.startswith('price_') and not currency and len({v['currency'] for v in items if v['amount_minor'] is not None})>1:raise ValueError('Choose one currency before sorting prices')
+ if sort=='distance' and not arg('latitude'):raise ValueError('Choose your approximate location before sorting by distance')
  for key,operation in [('min_price',lambda a,b:a>=b),('max_price',lambda a,b:a<=b)]:
   if arg(key):
+   if kind=='JOB':raise ValueError('Use salary filters for jobs')
    from market_pilot import amount
-   threshold=amount(arg(key),currency);items=[v for v in items if v['amount_minor'] is not None and operation(v['amount_minor'],threshold)]
+   threshold=amount(arg(key),currency);items=[v for v in items if v['listing_type']!='JOB' and v['amount_minor'] is not None and operation(v['amount_minor'],threshold)]
+ for key,operation in [('min_salary',lambda a,b:a>=b),('max_salary',lambda a,b:a<=b)]:
+  if arg(key):
+   if kind!='JOB':raise ValueError('Choose Jobs to filter salaries')
+   from market_pilot import amount
+   threshold=amount(arg(key),currency);items=[v for v in items if v['amount_minor'] is not None and operation(v['type_details'].get('salary_max_minor',v['amount_minor']) if key=='min_salary' else v['amount_minor'],threshold)]
  synonyms={r['term']:r['replacement'] for r in d.execute('SELECT * FROM market_synonyms')}
  canonical=lambda word:synonyms.get(word,word)
  query=arg('q')[:120];terms=[canonical(t) for t in tokens(query) if t not in STOP][:16]
  docs=[];vocabulary=set()
  for item in items:
   weights=Counter()
-  for field,mult in [(item['title'],4),(json.dumps(item['attributes'],ensure_ascii=False),3),(item['description'],1),(item['category']+' '+item['subcategory']+' '+item['condition']+' '+item['shop_name']+' '+item['nickname']+' '+item['city'],1)]:
+  for field,mult in [(item['title'],4),(json.dumps(item['attributes'],ensure_ascii=False)+' '+json.dumps(item.get('type_details',{}),ensure_ascii=False),3),(item['description'],1),(item['category']+' '+item['subcategory']+' '+item['condition']+' '+item['shop_name']+' '+item['nickname']+' '+item['city']+' '+item.get('listing_type','PRODUCT')+' '+item.get('country',''),1)]:
    for word in tokens(field):weights[canonical(word)]+=mult
   docs.append((item,weights));vocabulary.update(weights)
  corrected=[];changes=[]
@@ -60,11 +75,13 @@ def search(d,uid,items,q):
   elif corrected and sum(hits)>=max(1,len(corrected)//2) and all(t in weights for t in numeric):related.append((score,item))
  def rank(pair):
   score,v=pair
+  if sort.startswith('price_'):return (v['amount_minor'] is None,(v['amount_minor'] or 0)*(1 if sort=='price_asc' else -1),-score,-v['created'],v['id'])
+  if sort=='distance':return (v['distance_km'] is None,v['distance_km'] or 0,-score,-v['created'],v['id'])
   return (-score,-int(v.get('featured',0)),v['amount_minor'] if budget and v['amount_minor'] is not None else 10**15,-v['created'],v['id'])
  exact.sort(key=rank);related.sort(key=rank);offset=max(0,min(100000,int(arg('offset','0'))))
  favorites={r[0] for r in d.execute('SELECT DISTINCT m.category_id FROM market_saves s JOIN market_listing_meta m ON m.id=s.listing WHERE s.uid=?',(uid,))}
  page=[v for _,v in exact[offset:offset+20]]
- recommendations=sorted(page,key=lambda v:(-int(v.get('featured',0)),-int(v['category_id'] in favorites),-v['created'],v['id']))[:4] if not query and not arg('category') and not offset and len(page)>4 else []
+ recommendations=sorted(page,key=lambda v:(-int(v.get('featured',0)),-int(v['category_id'] in favorites),-v['created'],v['id']))[:4] if sort=='relevance' and not query and not arg('category') and not offset and len(page)>4 else []
 
  return {'listings':[v for _,v in exact[offset:offset+20]],'more':len(exact)>offset+20,'total':len(exact),'related':[v for _,v in related[:8]] if not exact else [],'interpretation':' '.join(corrected) if changes else None,'original_query':query,'location':{'mode':mode,'country':country,'city':city},'recommendations':recommendations,'recommendation_basis':'Featured listings, saved categories and recent discoveries','engine':'lexical-v1','semantic_enabled':False}
 

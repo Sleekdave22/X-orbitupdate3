@@ -46,7 +46,7 @@ def context(d,uid,peer,listing=''):
  refs=[]
  for r in d.execute('SELECT listing FROM market_inquiries WHERE ((buyer=? AND seller=?) OR (buyer=? AND seller=?)) AND (?="" OR listing=?) ORDER BY created DESC LIMIT 5',(uid,peer,peer,uid,listing,listing)):
   try:
-   v=view(d,row(d,r['listing']),uid);refs.append({k:v[k] for k in ('id','title','price','amount_minor','currency','state','images')})
+   v=view(d,row(d,r['listing']),uid);refs.append({k:v[k] for k in ('id','title','price','amount_minor','currency','state','images','listing_type','pricing_mode','type_details')})
   except ValueError:pass
  return {'can_chat':True,'items':refs}
 
@@ -70,7 +70,7 @@ def get(server,uid,path,q):
    return {'notifications':[dict(r)|{'target':json.loads(r['target'])} for r in rows[:50]],'more':len(rows)>50,'unread':count}
   if path=='/market/activity_item':
    r=d.execute("SELECT * FROM account_activity WHERE uid=? AND category='market' AND id=?",(uid,int(arg('id','0')))).fetchone()
-   if not r:raise ValueError('Market notification unavailable')
+   if not r:raise ValueError('Plaza notification unavailable')
    return {'notification':dict(r)|{'target':json.loads(r['target'])}}
  raise ValueError('Unknown Market connection route')
 
@@ -97,10 +97,14 @@ def post(server,uid,action,b):
    v=accessible(d,uid,b.get('id'));target=v['uid'];permitted(d,uid,target)
    if target==uid:raise ValueError('This is your own listing')
    if v['state']!='ACTIVE':raise ValueError('This listing is not accepting new inquiries')
+   if not v['application_open']:raise ValueError('The application deadline for this job has passed')
+   intent=b.get('intent','contact')
+   if intent not in ('contact','quote','opportunity') or intent=='quote' and v['listing_type'] not in ('SERVICE','SKILL') or intent=='opportunity' and v['listing_type']!='SKILL':raise ValueError('Choose an appropriate contact action')
    prior=d.execute('SELECT * FROM market_inquiries WHERE buyer=? AND listing=?',(uid,v['id'])).fetchone()
    if not prior:
     if d.execute('SELECT count(*) FROM market_inquiries WHERE buyer=? AND created>?',(uid,now-3600)).fetchone()[0]>=20:raise ValueError('Please slow down before opening more inquiries')
-    d.execute('INSERT INTO market_inquiries VALUES(?,?,?,?)',(uid,target,v['id'],now));emit(d,target,'inquiries','Buyer inquiry: '+v['title'],{'chat':uid,'listing':v['id'],'event':'inquiry'})
+    label='Quotation request' if intent=='quote' else {'PRODUCT':'Buyer inquiry','SERVICE':'Service inquiry','SKILL':'Professional opportunity','JOB':'Job inquiry'}[v['listing_type']]
+    d.execute('INSERT INTO market_inquiries VALUES(?,?,?,?)',(uid,target,v['id'],now));emit(d,target,'inquiries',label+': '+v['title'],{'chat':uid,'listing':v['id'],'event':'inquiry','listing_type':v['listing_type'],'intent':intent})
    can=bool(d.execute('SELECT 1 FROM contacts WHERE owner=? AND peer=?',(uid,target)).fetchone())
    if not can:
     import social
@@ -117,7 +121,7 @@ def post(server,uid,action,b):
    return json.loads(old['result'])
   if action=='offer_create':
    v=accessible(d,uid,b.get('listing'));target=v['uid'];permitted(d,uid,target)
-   if target==uid or v['state']!='ACTIVE' or v['amount_minor'] is None or v['availability']=='unavailable':raise ValueError('This listing cannot accept offers')
+   if target==uid or v['state']!='ACTIVE' or not v['can_offer'] or v['availability']=='unavailable':raise ValueError('This listing cannot accept offers')
    if d.execute("SELECT 1 FROM market_offers WHERE buyer=? AND listing=? AND state IN ('PENDING','COUNTERED','ACCEPTED')",(uid,v['id'])).fetchone():raise ValueError('You already have an open offer for this item')
    if d.execute('SELECT count(*) FROM market_offers WHERE buyer=? AND created>?',(uid,now-3600)).fetchone()[0]>=20:raise ValueError('Please slow down before sending more offers')
    minor=amount(b.get('price'),v['currency'])
@@ -126,7 +130,7 @@ def post(server,uid,action,b):
   else:
    o=offer_view(d,uid,b.get('id'));permitted(d,o['buyer'],o['seller']);__import__('market_pilot').seller(d,o['seller']);ident=o['id'];v=view(d,row(d,o['listing']),uid);target=o['seller'] if uid==o['buyer'] else o['buyer'];minor=o['amount_minor'];operation=b.get('action')
    if b.get('revision')!=o['revision']:raise ValueError('Offer changed. Reopen it before responding.')
-   if o['state'] not in ('PENDING','COUNTERED') or v['state']!='ACTIVE':raise ValueError('Offer no longer open for negotiation')
+   if o['state'] not in ('PENDING','COUNTERED') or v['state']!='ACTIVE' or not v['can_offer']:raise ValueError('Offer no longer open for negotiation')
    if operation=='cancel':
     if uid!=o['buyer']:raise ValueError('Only the buyer can cancel an offer')
     state='CANCELLED'

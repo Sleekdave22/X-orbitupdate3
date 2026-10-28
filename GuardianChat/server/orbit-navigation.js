@@ -6,7 +6,7 @@ let homeActivity=null,homeActivityOwner='';
 function syncMainNavigation(){
  ensureHomeActivity();
  mainNavigation.hidden=!account||!['contacts','profile'].includes(activeScreen);
- mainNavigation.style.width=Math.min(940,Math.max(0,document.querySelector('main').getBoundingClientRect().width-16))+'px';
+
  const selected=activeScreen==='profile'?'profile':homeMode==='calls'?'calls':'chats';
  for(const key of ['vibe','chats','calls','profile']){const b=el(key+'Tab'),on=key===selected;b.setAttribute('aria-selected',String(on));b.setAttribute('aria-pressed',String(on));b.tabIndex=on?0:-1}
 }
@@ -23,10 +23,10 @@ syncMainNavigation();
 window.addEventListener('resize',syncMainNavigation);
 function ensureHomeActivity(){
  const owner=account?.id||'';if(owner===homeActivityOwner)return;homeActivity?.destroy();homeActivity=null;homeActivityOwner=owner;
- for(const id of ['gamingTab','marketTab','vibeTab'])el(id).querySelector('.notification-badge')?.remove();
+ for(const id of ['gamingTab','marketTab'])el(id).querySelector('.notification-badge')?.remove();
  if(!owner)return;const scoped=async(path,body)=>{if(account?.id!==owner)throw Error('Account changed');const r=await api(path,body);if(account?.id!==owner)throw Error('Account changed');return r};
- homeActivity=OrbitActivity.create({api:scoped,category:'play',onOpen:()=>{}});homeActivity.subscribe((items,counts)=>{if(account?.id!==owner)return;for(const [id,key] of [['gamingTab','play'],['marketTab','market'],['vibeTab','vibe']])homeActivity.badge(el(id),counts[key]||0)})
+ homeActivity=OrbitActivity.create({api:scoped,category:'play',onOpen:()=>{}});homeActivity.subscribe((items,counts)=>{if(account?.id!==owner)return;for(const [id,key] of [['gamingTab','play'],['marketTab','market']])homeActivity.badge(el(id),counts[key]||0)})
 }
 
-const homeTarget=new URLSearchParams(location.search).get('home');if(homeTarget==='profile'&&account)showProfile(account.id);else if(homeTarget==='calls')chooseHome('calls');
+const homeTarget=new URLSearchParams(location.search).get('home');if(homeTarget==='profile'&&account)showProfile(account.id);else if(homeTarget==='calls')chooseHome('calls');else if(homeTarget==='settings')toggleSettings(true);
 const vibeOwner=new URLSearchParams(location.search).get('vibe_owner');if(account&&/^[a-f0-9]{12}$/.test(vibeOwner||''))api('/profile?id='+vibeOwner).then(p=>{openChat(p);const reply=new URLSearchParams(location.search).get('vibe_reply');if(reply)el('draft').value=reply.slice(0,200)}).catch(e=>error(e.message));

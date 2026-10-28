@@ -20,7 +20,7 @@ html[data-theme=bright]{
 *{box-sizing:border-box}
 html{--orbit-wallpaper:url('/branding/orbit-wallpaper.png?v=19');--orbit-settings-wallpaper:url('/branding/settings-dark.png?v=20');--orbit-play-icon:url('/branding/orbit-icon-plain.png?v=29');--pair-wallpaper:var(--personal-wallpaper-dark,linear-gradient(transparent,transparent));--brand-heading:var(--personal-heading-dark,var(--cyan-text));background:var(--bg);scrollbar-color:var(--control-line) var(--card)}
 html[data-theme=bright]{--orbit-wallpaper:url('/branding/orbit-wallpaper-v2.png?v=19');--orbit-settings-wallpaper:url('/branding/settings-light.png?v=20');--orbit-play-icon:url('/branding/orbit-icon-plain.png?v=29');--pair-wallpaper:var(--personal-wallpaper-light,linear-gradient(transparent,transparent));--brand-heading:var(--personal-heading-light,var(--cyan-text))}
-body{margin:0;background:var(--bg)!important;background-image:var(--pair-wallpaper),var(--orbit-wallpaper)!important;background-position:center top!important;background-size:cover!important;background-attachment:fixed!important;background-blend-mode:color,normal;color:var(--ink)!important;font-family:var(--body)!important;line-height:1.5}
+body{margin:0;background:var(--bg)!important;background-image:var(--pair-wallpaper),var(--wallpaper-soften),var(--orbit-wallpaper)!important;background-position:center top!important;background-size:cover!important;background-attachment:fixed!important;background-blend-mode:color,normal,normal;color:var(--ink)!important;font-family:var(--body)!important;line-height:1.5}
 @media(min-width:700px){body{background-size:560px auto!important;background-repeat:repeat!important}}
 /* Arena artwork covers the viewport even when the current tab has little content. */
 body:has(#gamingBrand){min-height:100vh;min-height:100dvh;background-size:cover!important;background-repeat:no-repeat!important}
@@ -31,7 +31,7 @@ h1{font-size:clamp(23px,3vw,30px)}h2{font-size:22px}h3{font-size:17px}h4{font-si
 button{min-height:44px;padding:10px 16px!important;border:1.5px solid transparent!important;border-radius:12px!important;background:var(--card2)!important;color:var(--muted)!important;font-size:13px;font-weight:600;line-height:1.3;cursor:pointer;transition:background-color .15s,border-color .15s,filter .15s}
 button:hover{background:color-mix(in srgb,var(--cyan-text) 8%,transparent)!important}
 button:disabled{opacity:.5;cursor:default}
-button.primary,button.orbit-primary,button[type=submit],button.selected,button[aria-selected=true],button[aria-pressed=true],nav button[aria-current=true],.auth-choices button.selected,#contacts>.home-tabs button[aria-pressed=true]{background:var(--violet)!important;color:#fff!important;border-color:var(--violet)!important}
+button.primary,button.orbit-primary,button[type=submit],button.selected,button[aria-selected=true],button[aria-pressed=true],nav button[aria-current=true],.auth-choices button.selected,#contacts>.home-tabs button[aria-pressed=true]{background:var(--personal-bubble,var(--violet))!important;color:var(--personal-ink,#fff)!important;border-color:transparent!important}
 button.tertiary,button.orbit-tertiary{background:var(--amber)!important;color:#0b1520!important;border-color:var(--amber)!important}
 button.orbit-destructive{border-color:var(--coral)!important;color:var(--coral)!important}
 :where(button,input,textarea,select,a,summary,[role=button],[tabindex]):focus-visible,.once-icon:focus-within{outline:2px solid var(--focus)!important;outline-offset:2px}
@@ -56,7 +56,7 @@ header p{font-size:12px;color:var(--muted)}
 .header-actions #homeBack{font-size:30px}
 #contacts>.home-tabs{padding:6px!important;background:var(--card)!important;border:1px solid var(--line)!important;border-radius:16px}
 #contacts>.home-tabs button[aria-pressed=false],nav button,.social-panel .profile-nav-tab{background:var(--card2)!important;color:var(--muted)!important;border-color:transparent!important}
-#contacts>.home-tabs button[aria-pressed=true],nav button.selected,.social-panel .profile-nav-tab.selected{background:var(--violet)!important;color:#fff!important;border-color:var(--violet)!important}
+#contacts>.home-tabs button[aria-pressed=true],nav button.selected,.social-panel .profile-nav-tab.selected{background:var(--personal-bubble,var(--violet))!important;color:var(--personal-ink,#fff)!important;border-color:transparent!important}
 nav{display:flex;flex-wrap:wrap;gap:7px;row-gap:12px;overflow:visible;padding:14px 0 18px!important}
 nav button{flex:0 1 auto;min-width:0;min-height:44px;padding:9px 12px!important;font-size:12px!important;white-space:normal;line-height:1.3}
 nav button.group-start{margin-left:6px;position:relative;overflow:visible}
@@ -72,7 +72,7 @@ nav.locked [data-tab=admin]:not([hidden]),nav.locked [data-tab=studio]:not([hidd
 #peerProfile,.profile-heading,#myProfile{background:transparent!important;color:var(--ink)!important;border:0!important}
 #chat .head{background:var(--card)!important;border-radius:16px!important;padding:8px!important}
 #chat .head :is(#voiceCall,#videoCall,#back),#profileBack,#homeBack{background:transparent!important;color:var(--cyan-text)!important;border:0!important}
-#gamingTab{display:inline-flex;align-items:center;gap:8px;background:var(--violet)!important;color:#fff!important;border-color:var(--violet)!important;min-height:44px}
+#gamingTab{display:inline-flex;align-items:center;gap:8px;background:var(--personal-bubble,var(--violet))!important;color:var(--personal-ink,#fff)!important;border-color:transparent!important;min-height:44px}
 #gamingTab img{border-radius:7px}
 #messages .message,#messages .message.own{background:transparent!important;border:0!important}
 #chat .message .message-body{background:var(--personal-received,var(--card2))!important;color:var(--personal-received-ink,var(--ink))!important;border:1px solid var(--line)!important;border-radius:16px 16px 16px 5px!important}
@@ -91,7 +91,7 @@ nav.locked [data-tab=admin]:not([hidden]),nav.locked [data-tab=studio]:not([hidd
 .unread-badge{background:var(--violet)!important;color:#fff!important}
 .delivery-status.read{background:var(--cyan)!important;border-color:var(--cyan)!important}
 .delivery-status.delivered{background:var(--violet-text)!important;border-color:var(--violet-text)!important}
-#navigationMenu{position:fixed;top:0;bottom:0;right:0;width:30vw;height:100dvh;max-width:none;min-width:0;z-index:1080;overflow:auto;border-radius:0;background:var(--card)!important;color:var(--ink);border-left:1px solid var(--line);padding:max(12px,env(safe-area-inset-top)) 6px 16px;box-shadow:-16px 0 48px #0003;animation:orbit-drawer-in .23s ease-out}
+#navigationMenu{position:fixed;top:0;bottom:0;right:0;width:40vw;height:100dvh;max-width:none;min-width:0;z-index:1080;overflow:auto;border-radius:0;background:var(--card)!important;color:var(--ink);border-left:1px solid var(--line);padding:max(12px,env(safe-area-inset-top)) 6px 16px;box-shadow:-16px 0 48px #0003;animation:orbit-drawer-in .23s ease-out}
 #navigationMenu button{width:100%;min-width:0;display:flex;align-items:center;text-align:left;gap:8px;padding:10px 5px!important;background:transparent!important;border:0!important;color:var(--ink)!important;font-size:12px;white-space:normal;overflow-wrap:anywhere}
 #navigationMenu #myProfile{flex-direction:row}#navigationMenu #ownAvatar{width:32px;height:32px;flex-shrink:0}
 #navigationMenu #ownName{min-width:0;overflow-wrap:anywhere}#navigationMenu hr{border:0;border-top:1px solid var(--line)}
@@ -103,7 +103,7 @@ nav.locked [data-tab=admin]:not([hidden]),nav.locked [data-tab=studio]:not([hidd
 .auth-welcome img,#welcome .ring img{border:2px solid var(--cyan);outline:5px solid #7c3aed26;outline-offset:4px;border-radius:24px!important}
 .auth-welcome{padding-top:12px}
 .auth-choices button{background:var(--card2)!important;color:var(--muted)!important;border-color:transparent!important}
-.auth-choices button.selected{background:var(--violet)!important;color:#fff!important;border-color:var(--violet)!important}
+.auth-choices button.selected{background:var(--personal-bubble,var(--violet))!important;color:var(--personal-ink,#fff)!important;border-color:transparent!important}
 #welcome,#orbitIntro{background:linear-gradient(#0b1520b8,#0b1520b8),var(--pair-wallpaper),var(--orbit-wallpaper) center/cover!important;background-blend-mode:normal,color,normal;color:#f1f5f9!important}
 #welcome :is(strong,p),#orbitIntro :is(strong,p,small){color:#f1f5f9!important}
 #welcome .ring{position:relative;width:132px;height:132px;margin-bottom:24px;display:grid;place-items:center}
@@ -304,3 +304,17 @@ body:has(#gamingBrand)>header>div:not(#topGamingProfile){flex:1;min-width:0}
 .arena-account-row #gamingTab{margin:0!important}
 .arena-account-row #marketTab{display:inline-flex;align-items:center;gap:7px;width:auto;min-width:0;min-height:42px;margin:0;padding:8px 12px;font-size:12px;background:var(--card2)!important;color:var(--ink)!important;border:0!important;border-radius:14px}
 #marketTab svg{flex-shrink:0}
+
+/* Softer artwork preserves the approved source images and account colour tint. */
+html{--wallpaper-soften:linear-gradient(180deg,#6300c659,#001f5959 56%,#00000d59)}
+html[data-theme=bright]{--wallpaper-soften:linear-gradient(180deg,#d874f880,#1d6fff80 56%,#01d3ed80)}
+#navigationMenu #myProfile{margin-left:0!important;max-width:100%!important;width:100%;justify-content:flex-start;flex-shrink:1;text-align:left}
+#navigationMenu #ownName{flex:1 1 0;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
+#settingsPanel{width:60vw}
+#marketSettings{background:transparent!important;border:0!important;padding:5px!important;min-width:36px;flex-shrink:0;color:var(--cyan-text)!important}
+
+/* Account pairs drive controls without changing ordinary text or status colours. */
+html{--accent:var(--personal-bubble,var(--violet));--on-accent:var(--personal-ink,#fff)}
+button:not(.media-editor-back){--account-idle:color-mix(in srgb,var(--personal-received,#202546) 35%,var(--bg,#0b1520))}
+button{background:var(--account-idle,var(--card2))!important}
+button:is(.primary,.orbit-primary,[type=submit],.selected,[aria-selected=true],[aria-pressed=true]),#addContact button,.conversation-search button{background:var(--personal-bubble,var(--violet))!important;color:var(--personal-ink,#fff)!important;border-color:transparent!important}
