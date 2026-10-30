@@ -3,7 +3,7 @@ import test_server,rankings,game_identities,gamebox_core
 class PhaseBTest(unittest.TestCase):
  setUp=test_server.ChatTest.setUp;tearDown=test_server.ChatTest.tearDown;call=test_server.ChatTest.call
  def user(self,name):
-  u=self.call('/register',{'invite':self.server.invite,'name':name});self.call('/gaming/profile',{'tag':name,'game_id':'legacy-'+u['id'],'adult':True},u['token']);return u
+  u=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':name});self.call('/gaming/profile',{'tag':name,'game_id':'legacy-'+u['id'],'adult':True},u['token']);return u
  def identity(self,u,game='efootball',gid=None,**extra):return self.call('/identities/save',dict(dict(game=game,game_id=gid or 'game-'+u['id'],region='Nigeria',tz='Africa/Lagos',availability=[],nickname=u['name'],platform='mobile',country='NG',visible=True),**extra),u['token'])
  def admin(self,u):
   with self.server.db() as d:d.execute('INSERT OR IGNORE INTO game_admin VALUES(?)',(u['id'],))

@@ -18,7 +18,7 @@ class SignupInvitationHTTP(unittest.TestCase):
         return parse_qs(urlparse(info['path']).query)['invite'][0]
 
     def signup(self, link, nickname='new_member', **extra):
-        return self.call('/register', dict(name='New Member', nickname=nickname,
+        return self.call('/register', dict(name='New Member', nickname=nickname, birth_date='1995-05-05', sex='undisclosed',
             password='new-member-pass-123', invite_link=link, **extra))
 
     def test_link_signup_login_permissions_and_no_automatic_contacts(self):

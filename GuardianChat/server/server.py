@@ -36,7 +36,7 @@ class ChatServer(ThreadingHTTPServer):
             db.executescript('''CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,name TEXT NOT NULL,token_hash TEXT UNIQUE NOT NULL);
             CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY AUTOINCREMENT,sender TEXT NOT NULL,recipient TEXT NOT NULL,text TEXT NOT NULL,filename TEXT,mime TEXT,fileid TEXT,size INTEGER,time INTEGER,client_id TEXT NOT NULL,UNIQUE(sender,client_id));''')
             user_columns={r[1] for r in db.execute('PRAGMA table_info(users)')}
-            for name,kind in [('password_hash',"TEXT DEFAULT ''"),('nickname','TEXT'),('profile_version','INTEGER DEFAULT 0'),('avatar',"TEXT DEFAULT ''"),('avatar_mime',"TEXT DEFAULT ''"),('last_seen','INTEGER DEFAULT 0')]:
+            for name,kind in [('password_hash',"TEXT DEFAULT ''"),('nickname','TEXT'),('profile_version','INTEGER DEFAULT 0'),('avatar',"TEXT DEFAULT ''"),('avatar_mime',"TEXT DEFAULT ''"),('last_seen','INTEGER DEFAULT 0'),('birth_date','TEXT'),('sex','TEXT')]:
                 if name not in user_columns:db.execute(f'ALTER TABLE users ADD COLUMN {name} {kind}')
             db.execute('UPDATE users SET nickname=id WHERE nickname IS NULL')
             db.execute('CREATE UNIQUE INDEX IF NOT EXISTS unique_nickname ON users(nickname COLLATE NOCASE)')
@@ -456,6 +456,8 @@ class Handler(BaseHTTPRequestHandler):
                 if using_link and (not isinstance(password,str) or not 10<=len(password)<=128):self.reply(400,{'error':'Use a password of 10–128 characters'});return
                 name=str(body.get('name','')).strip()
                 if not 1<=len(name)<=40:raise ValueError()
+                try:birth_date=__import__('account_age').parse(body.get('birth_date'));sex=__import__('account_age').parse_sex(body.get('sex'))
+                except ValueError as e:self.reply(400,{'error':str(e)});return
                 uid=uuid.uuid4().hex[:12];token=secrets.token_urlsafe(32)
                 nickname=str(body.get('nickname') or uid).strip().lstrip('@').lower()
                 if not re.fullmatch(r'[a-z0-9_]{3,24}',nickname):self.reply(400,{'error':'Nickname must be 3–24 letters, numbers or underscores'});return
@@ -467,7 +469,7 @@ class Handler(BaseHTTPRequestHandler):
                     password_hash=''
                     if using_link:
                         salt=secrets.token_hex(16);password_hash=salt+':'+hashlib.pbkdf2_hmac('sha256',password.encode(),bytes.fromhex(salt),200000).hex()
-                    db.execute('INSERT INTO users(id,name,token_hash,nickname,password_hash) VALUES(?,?,?,?,?)',(uid,name,hashlib.sha256(token.encode()).hexdigest(),nickname,password_hash))
+                    db.execute('INSERT INTO users(id,name,token_hash,nickname,password_hash,birth_date,sex) VALUES(?,?,?,?,?,?,?)',(uid,name,hashlib.sha256(token.encode()).hexdigest(),nickname,password_hash,birth_date,sex))
                     __import__('wallet').create_wallet(db,uid)
                     db.execute('INSERT INTO sessions VALUES(?,?)',(hashlib.sha256(token.encode()).hexdigest(),uid))
                     __import__('account_invites').record(db,uid,inviter)

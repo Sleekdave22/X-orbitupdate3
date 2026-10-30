@@ -2,7 +2,7 @@ import unittest,urllib.error
 import test_server
 class SocialTest(unittest.TestCase):
  setUp=test_server.ChatTest.setUp;tearDown=test_server.ChatTest.tearDown;call=test_server.ChatTest.call
- def reg(self,name):return self.call('/register',{'invite':self.server.invite,'name':name})
+ def reg(self,name):return self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':name})
  def act(self,u,action,**body):return self.call('/social/'+action,body,u['token'])
  def profile(self,viewer,u):return self.call('/social/profile?id='+u['id'],token=viewer['token'])
  def test_message_requests_require_recipient_acceptance(self):

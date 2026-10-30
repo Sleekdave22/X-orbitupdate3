@@ -32,6 +32,7 @@
   }
   const width=()=>track.clientWidth||1;
   function paint(){
+    if(!track.clientWidth)return;
     const p=Math.max(0,Math.min(2,track.scrollLeft/width()));
     line.style.transform='translateX('+(p*100)+'%)';
     const idx=Math.round(p);
@@ -50,7 +51,7 @@
   function go(i,smooth=true){
     i=Math.max(0,Math.min(2,i));ensureFrame(i);
     track.scrollTo({left:i*width(),behavior:smooth&&!reduce()?'smooth':'auto'});
-    if(!smooth||reduce()){current=i;label();paint()}
+    if(!smooth||reduce()){current=i;label();line.style.transform='translateX('+(i*100)+'%)'}
   }
   tabs.forEach((t,i)=>{t.onclick=ev=>{ev.preventDefault();ev.stopPropagation();go(i)}});
   bar.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const n=e.key==='Home'?0:e.key==='End'?2:current+(e.key==='ArrowRight'?1:-1);go(n);tabs[Math.max(0,Math.min(2,n))].focus()});

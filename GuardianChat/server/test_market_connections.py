@@ -41,7 +41,7 @@ class MarketConnectionsTest(unittest.TestCase):
   a=self.shop();b=self.register('Buyer');i=self.save(a,self.body())['id'];self.call('/market/inquiry',{'id':i},b['token']);self.call('/market/inquiry',{'id':i},b['token'])
   context=self.call('/market/chat_context?peer='+a['id'],token=b['token']);self.assertTrue(context['can_chat']);self.assertEqual(context['items'][0]['id'],i)
   events=self.call('/market/activity',token=a['token'])['notifications'];self.assertEqual(sum(n['target'].get('event')=='inquiry' for n in events),1)
-  stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'})
+  stranger=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Stranger'})
   r=self.call('/market/inquiry',{'id':i},stranger['token']);self.assertEqual(r['state'],'pending');self.assertFalse(self.call('/market/chat_context?peer='+a['id'],token=stranger['token'])['can_chat'])
   self.call('/social/message_accept',{'target':stranger['id']},a['token']);self.assertTrue(self.call('/market/chat_context?peer='+a['id'],token=stranger['token'])['can_chat'])
   with self.assertRaises(urllib.error.HTTPError):self.call('/market/inquiry',{'id':i},a['token'])

@@ -14,7 +14,7 @@ class VibeViewerTest(VibeTest):
   self.assertEqual(len(self.call('/vibe/viewers?id='+public['id'],token=author['token'])['viewers']),1)
 
  def test_feed_identifies_self_and_contacts_without_private_caption_leak(self):
-  author=self.register('Author');viewer=self.register('Viewer');stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'})
+  author=self.register('Author');viewer=self.register('Viewer');stranger=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Stranger'})
   self.publish(author,caption='Public post')
   feed=self.call('/vibe/feed',token=viewer['token']);self.assertEqual(feed['account']['id'],viewer['id']);self.assertTrue(feed['groups'][0]['contact'])
   self.assertFalse(self.call('/vibe/feed',token=stranger['token'])['groups'][0]['contact'])
@@ -36,7 +36,7 @@ class VibeViewerTest(VibeTest):
   with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/reply',dict(body,text='Changed'),viewer['token'])
 
  def test_reply_does_not_create_contacts_or_bypass_blocks_or_private_audience(self):
-  author=self.register('Author');viewer=self.register('Viewer');stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'});post=self.publish(author)
+  author=self.register('Author');viewer=self.register('Viewer');stranger=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Stranger'});post=self.publish(author)
   body={'id':post['id'],'text':'Hello','client_id':'protected-reply'}
   with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/reply',body,stranger['token'])
   private=self.publish(author,'private',audience=[viewer['id']])

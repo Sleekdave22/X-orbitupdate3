@@ -100,7 +100,7 @@ class WalletTest(unittest.TestCase):
  def test_registration_failure_rolls_back_account_and_wallet(self):
   from unittest.mock import patch
   with patch('wallet.create_wallet',side_effect=RuntimeError('fixture failure')):
-   with self.assertRaises(urllib.error.HTTPError):self.call('/register',{'invite':self.server.invite,'name':'Rollback','nickname':'rollback_wallet'})
+   with self.assertRaises(urllib.error.HTTPError):self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Rollback','nickname':'rollback_wallet'})
   with self.server.db() as d:self.assertFalse(d.execute("SELECT 1 FROM users WHERE nickname='rollback_wallet'").fetchone());self.assertEqual(d.execute('SELECT COUNT(*) FROM fin_wallets').fetchone()[0],0)
  def test_server_restart_and_different_key_cannot_reuse_confirmation(self):
   import threading

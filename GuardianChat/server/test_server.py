@@ -12,7 +12,7 @@ class ChatTest(unittest.TestCase):
   with urllib.request.urlopen(request,timeout=5) as r:
    data=r.read();return json.loads(data) if r.headers.get_content_type()=='application/json' else data
  def register(self,name):
-  user=self.call('/register',{'invite':self.server.invite,'name':name})
+  user=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':name})
   # Existing transfer tests use explicitly paired test accounts.
   for other in getattr(self,'accounts',[]):self.call('/contacts',{'code':other['id']},user['token'])
   self.accounts=getattr(self,'accounts',[])+[user]
@@ -66,7 +66,7 @@ class ChatTest(unittest.TestCase):
   self.call('/close',{'message_id':mid},b['token'])
  def test_presence_is_account_scoped_and_expires(self):
   import time
-  a=self.register('Present');b=self.register('Contact');stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'})
+  a=self.register('Present');b=self.register('Contact');stranger=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Stranger'})
   with self.assertRaises(urllib.error.HTTPError):self.call('/presence',{})
   self.call('/presence',{},a['token'])
   status=self.call('/profile?id='+a['id'],token=b['token']);self.assertTrue(status['online']);self.assertGreater(status['last_seen'],0)
@@ -83,7 +83,7 @@ class ChatTest(unittest.TestCase):
    rows=list(db.execute('SELECT fileid,recipient,text,view_once FROM messages WHERE id IN (?,?)',(first,second)))
   self.assertEqual(len(rows),2);self.assertNotEqual(rows[0]['fileid'],rows[1]['fileid']);self.assertTrue(all(row['view_once'] and row['text']=='Caption' for row in rows))
  def test_voice_call_contact_authorization_and_lifecycle(self):
-  a=self.register('Caller');b=self.register('Recipient');stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'})
+  a=self.register('Caller');b=self.register('Recipient');stranger=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Stranger'})
   offer={'type':'offer','sdp':'test offer'};answer={'type':'answer','sdp':'test answer'}
   with self.assertRaises(urllib.error.HTTPError):self.call('/calls/start',{'peer':stranger['id'],'offer':offer},a['token'])
   call=self.call('/calls/start',{'peer':b['id'],'offer':offer},a['token']);self.assertEqual(call['state'],'ringing')
@@ -99,7 +99,7 @@ class ChatTest(unittest.TestCase):
   with self.server.call_lock:self.server.calls[call['id']]['created']-=46
   ended=self.call('/calls',token=a['token'])['calls'][0];self.assertEqual(ended['state'],'ended');self.assertIsNone(ended['offer'])
  def test_call_history_is_account_scoped_and_keeps_connected_duration(self):
-  a=self.register('Caller');b=self.register('Recipient');c=self.call('/register',{'invite':self.server.invite,'name':'Other account'})
+  a=self.register('Caller');b=self.register('Recipient');c=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Other account'})
   call=self.call('/calls/start',{'peer':b['id'],'offer':{'type':'offer','sdp':'offer'}},a['token'])
   self.call('/calls/answer',{'id':call['id'],'answer':{'type':'answer','sdp':'answer'}},b['token'])
   first=self.call('/calls/connected',{'id':call['id']},a['token'])['connected']
@@ -115,7 +115,7 @@ class ChatTest(unittest.TestCase):
   self.server.shutdown();self.server.server_close();self.server=ChatServer(('127.0.0.1',0),self.tmp.name,reset_call_history=True);self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start();self.base=f'http://127.0.0.1:{self.server.server_port}'
   history=self.call('/call-history',token=a['token'])['calls'];self.assertEqual(history[0]['id'],call['id']);self.assertEqual(history[0]['outcome'],'cancelled');self.assertEqual(len(self.call('/messages?peer='+b['id'],token=a['token'])['messages']),1)
  def test_media_library_is_conversation_scoped_and_excludes_view_once(self):
-  a=self.register('A');b=self.register('B');c=self.register('C');outsider=self.call('/register',{'invite':self.server.invite,'name':'Outsider'})
+  a=self.register('A');b=self.register('B');c=self.register('C');outsider=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Outsider'})
   for once in [False,True]:self.call('/messages',{'peer':b['id'],'text':'','client_id':str(once),'filename':'photo.png','mime':'image/png','data':base64.b64encode(b'image test').decode(),'view_once':once},a['token'])
   self.call('/messages',{'peer':c['id'],'text':'','client_id':'other-chat','filename':'other.png','mime':'image/png','data':base64.b64encode(b'other image').decode()},a['token'])
   for owner,peer in [(a,b),(b,a)]:
@@ -193,7 +193,7 @@ class ChatTest(unittest.TestCase):
   self.call('/logout',{},a['token'])
   with self.assertRaises(urllib.error.HTTPError):self.call('/users',token=a['token'])
   self.assertEqual(self.call('/users',token=signed['token'])['users'][0]['id'],b['id'])
-  c=self.call('/register',{'invite':self.server.invite,'name':'Account C'});self.assertEqual(self.call('/users',token=c['token'])['users'],[])
+  c=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Account C'});self.assertEqual(self.call('/users',token=c['token'])['users'],[])
  def test_video_above_old_limit(self):
   a=self.register('Video sender');b=self.register('Video recipient')
   payload=base64.b64encode(b'v'*(8*1024*1024+1)).decode()
@@ -203,9 +203,9 @@ class ChatTest(unittest.TestCase):
   with self.assertRaises(urllib.error.HTTPError) as e:self.call('/messages',body,a['token'])
   self.assertEqual(e.exception.code,413)
  def test_private_contacts_and_required_pairing(self):
-  a=self.call('/register',{'invite':self.server.invite,'name':'A'})
-  b=self.call('/register',{'invite':self.server.invite,'name':'B'})
-  c=self.call('/register',{'invite':self.server.invite,'name':'C'})
+  a=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'A'})
+  b=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'B'})
+  c=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'C'})
   self.assertEqual(self.call('/users',token=a['token'])['users'],[])
   with self.assertRaises(urllib.error.HTTPError) as e:self.call('/messages',{'peer':b['id'],'text':'blocked','client_id':'before'},a['token'])
   self.assertEqual(e.exception.code,403)
@@ -264,10 +264,10 @@ class ChatTest(unittest.TestCase):
     with migrated.db() as db:self.assertGreater(db.execute('SELECT read_at FROM messages').fetchone()[0],0)
    finally:migrated.server_close()
  def test_profiles_nicknames_and_private_contact_card(self):
-  a=self.call('/register',{'invite':self.server.invite,'name':'Alice','nickname':'Alice_Test'})
-  b=self.call('/register',{'invite':self.server.invite,'name':'Bob','nickname':'bob_test'})
+  a=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Alice','nickname':'Alice_Test'})
+  b=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Bob','nickname':'bob_test'})
   self.assertEqual(a['nickname'],'alice_test')
-  with self.assertRaises(urllib.error.HTTPError) as e:self.call('/register',{'invite':self.server.invite,'name':'Duplicate','nickname':'ALICE_TEST'})
+  with self.assertRaises(urllib.error.HTTPError) as e:self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Duplicate','nickname':'ALICE_TEST'})
   self.assertEqual(e.exception.code,409)
   with self.assertRaises(urllib.error.HTTPError):self.call('/profile?id='+a['id'],token=b['token'])
   self.call('/contacts',{'code':'@ALICE_TEST'},b['token'])

@@ -29,6 +29,9 @@
     <fieldset id="joinFields" disabled>
      <label for="joinName">Display name</label><input id="joinName" name="name" autocomplete="name" maxlength="40" required>
      <label for="joinNickname">Nickname</label><input id="joinNickname" name="nickname" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="25" required aria-describedby="nicknameHint"><small id="nicknameHint">3–24 letters, numbers or underscores. Your public @name.</small>
+     <label for="joinBirth">Date of birth</label><input id="joinBirth" name="birth_date" type="date" autocomplete="bday" required>
+     <label for="joinSex">Sex</label><select id="joinSex" name="sex" required><option value="">Choose…</option><option value="male">Male</option><option value="female">Female</option><option value="undisclosed">Prefer not to say</option></select>
+     <p class="muted">Date of birth and sex are private and used only to keep friend matching appropriate. Never shown to anyone.</p>
      <label for="joinPassword">Password</label><div class="join-password"><input id="joinPassword" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required aria-describedby="passwordHint"><button id="showJoinPassword" type="button" aria-label="Show password" aria-pressed="false" aria-controls="joinPassword">Show</button></div><small id="passwordHint">Use 10–128 characters. Keep this password for future sign-ins.</small>
      <label for="joinConfirm">Confirm password</label><div class="join-password"><input id="joinConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required><button id="showJoinConfirm" type="button" aria-label="Show confirm password" aria-pressed="false" aria-controls="joinConfirm">Show</button></div>
      <button id="joinSubmit" class="join-submit" type="submit" disabled>Create account →</button>

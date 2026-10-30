@@ -14,7 +14,7 @@ class VibePrivacyTest(unittest.TestCase):
   self.assertEqual(self.call('/vibe/feed',token=b['token'])['groups'],[]);self.assertNotIn(a['id'],self.call('/navigation/state',token=b['token'])['vibes']);self.assertTrue(self.call('/vibe/media?id='+post['id'],token=c['token'])['data'])
   with self.assertRaises(urllib.error.HTTPError):self.publish(a,'private',audience=[b['id']])
  def test_public_audience_contacts_and_followers_enforced_for_direct_links(self):
-  a=self.register('Author');b=self.register('Contact');stranger=self.call('/register',{'invite':self.server.invite,'name':'Stranger'});post=self.publish(a);self.privacy(a,public_audience='contacts')
+  a=self.register('Author');b=self.register('Contact');stranger=self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':'Stranger'});post=self.publish(a);self.privacy(a,public_audience='contacts')
   self.assertTrue(self.call('/vibe/media?id='+post['id'],token=b['token'])['data'])
   with self.assertRaises(urllib.error.HTTPError):self.call('/vibe/media?id='+post['id'],token=stranger['token'])
   self.privacy(a,public_audience='followers')

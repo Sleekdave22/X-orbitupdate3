@@ -20,7 +20,7 @@ class HardeningTest(unittest.TestCase):
         self.assertTrue(all(c != 201 for c in codes))
         self.assertEqual(codes[-1], 429)
         # the correct code is also refused while throttled, so guessing cannot be confirmed
-        self.assertEqual(self.status('/register', {'invite': self.server.invite, 'name': 'Late'}), 429)
+        self.assertEqual(self.status('/register', {'invite': self.server.invite, 'birth_date': '1995-05-05', 'sex': 'undisclosed', 'name': 'Late'}), 429)
 
     def test_signed_in_posts_have_a_per_account_ceiling(self):
         a = self.register('Chatty')

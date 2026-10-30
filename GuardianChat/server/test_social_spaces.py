@@ -2,7 +2,7 @@ import unittest,urllib.error,time
 import test_server
 class SpacesTest(unittest.TestCase):
  setUp=test_server.ChatTest.setUp;tearDown=test_server.ChatTest.tearDown;call=test_server.ChatTest.call
- def reg(self,name):return self.call('/register',{'invite':self.server.invite,'name':name})
+ def reg(self,name):return self.call('/register',{'invite':self.server.invite,'birth_date':'1995-05-05','sex':'undisclosed','name':name})
  def act(self,u,action,**body):return self.call('/spaces/'+action,body,u['token'])
  def setup_space(self):
   a,b,c=self.reg('Owner'),self.reg('Member'),self.reg('Stranger');sid=self.act(a,'create',name='Test community',game='Chess')['id'];self.act(b,'join',space=sid);return a,b,c,sid
