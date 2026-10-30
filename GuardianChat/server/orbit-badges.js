@@ -19,6 +19,7 @@ function avatar(target,id){if(!target)return;target.dataset.accountId=id;const a
 function paint(){
  const account=accountNow();if(!account||state?.account!==account.id)return;
  for(const id of ['chatsTab','vibeChat']){const target=document.getElementById(id);if(target)badge(target,state.unread_messages)}
+ {const target=document.getElementById('friendFindBtn');if(target)badge(target,state.friend_requests||0,'friend requests')}
  for(const [ids,key,label] of [[['callsTab','vibeCalls'],'missed_calls','unseen missed calls'],[['vibeTab'],'unseen_vibes','unseen Vibe posts']])for(const id of ids){const target=document.getElementById(id);if(target)badge(target,state[key],label)}
  document.querySelectorAll('[data-unread-chat]').forEach(n=>badge(n,state.unread_messages));
  document.querySelectorAll('[data-account-id]').forEach(n=>avatar(n,n.dataset.accountId));

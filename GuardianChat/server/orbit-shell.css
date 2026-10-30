@@ -14,7 +14,7 @@
 #orbitTrack::-webkit-scrollbar{display:none}
 .orbit-pane{flex:0 0 100%;width:100%;min-width:0;height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow-y:auto;overflow-x:hidden;position:relative}
 .orbit-pane>iframe{display:block;width:100%;height:100%;border:0;background:transparent}
-#pane-chat>#contacts{min-height:0}
+#pane-chat>#contacts{min-height:0;height:100%}
 .orbit-tab .notification-badge{position:absolute;top:6px;right:calc(50% - 30px)}
 /* Chat and Play share the same clean top band as Vibe and Plaza. */
 body.orbit-shell-on .brand-header{background:var(--surface,#131932)!important;border-bottom:1px solid var(--line);margin:-12px -12px 6px!important;padding:14px!important}

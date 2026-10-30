@@ -60,3 +60,17 @@ Assumptions: first launch 5,000 registered accounts, 1,000 daily active, about 2
 3. Add Skills and Jobs to Plaza if still wanted (category catalogue change).
 4. Real-device test with two or more accounts on a hosted test server.
 5. Plan SQLite to PostgreSQL before sustained concurrent writes grow; measure first.
+
+## Find friends (Chat) and signup fields
+
+- Signup now collects a private date of birth (13+) and sex. Both are stored on the account and never returned by any API.
+  Existing accounts have neither; nothing uses sex or age for matching yet.
+- Friend matching lives in `friend_match.py` (server) and `friends.js`/`friends.css` (Chat dialog opened by the "Find friends" button).
+  Rule: the receiver must have switched on "Available to be friended" and must have all 3 Highly Important traits and at least 1 of the
+  2 Considerable traits. The sender never learns who or how many matched; only acceptances are visible. Limits: 3 broadcasts a day,
+  50 recipients per broadcast, 14-day cooldown per sender and receiver (30 days after a decline), existing contacts and blocked
+  people are skipped.
+- Delivery is in-app (inbox plus a badge on the button). Push notifications for friend requests are not wired: the push dispatcher
+  is Plaza-specific and the Android client would need a matching change. The Android native home has no Find friends screen yet.
+- Notification preference (instant, daily summary at 09:00 local, off) and quiet hours only control when the badge appears; the
+  inbox always lists every pending request.

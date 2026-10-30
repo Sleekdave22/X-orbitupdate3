@@ -37,4 +37,4 @@ def get(server,uid):
    if r['uid']!=uid and not r['viewed']:unseen+=1
    prior=active.get(r['uid']);count=(prior['count'] if prior else 0)+1
    active[r['uid']]={'count':count,'item':r['id'],'visibility':r['visibility'],'expires':r['expires']}
-  return {'account':uid,'unread_messages':unread,'missed_calls':missed,'unseen_vibes':unseen,'vibes':active}
+  return {'account':uid,'unread_messages':unread,'missed_calls':missed,'unseen_vibes':unseen,'vibes':active,'friend_requests':__import__('friend_match').badge(d,uid)}

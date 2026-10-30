@@ -1,0 +1,39 @@
+/* Find friends (Chat) */
+.friend-bar{display:flex;margin:0 0 8px}
+.friend-bar[hidden]{display:none}
+#friendFindBtn{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 16px;border:0;border-radius:12px;background:var(--personal-bubble,var(--violet,#7c3aed));color:var(--personal-ink,#fff);font-weight:600;cursor:pointer}
+#friendFindBtn .chat-unread-badge{position:absolute;top:-6px;right:-6px}
+#friendDialog{width:min(94vw,560px);max-height:88dvh;padding:0;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:var(--card,#131932);color:var(--ink,#fff)}
+#friendDialog[open]{display:flex;flex-direction:column}
+.fr-head{display:flex;align-items:center;gap:8px;padding:14px 16px 6px}
+.fr-head h2{flex:1;margin:0;font-size:20px}
+#friendClose{background:transparent;border:0;color:var(--cyan-text,#22d3ee);font-size:15px;cursor:pointer;padding:8px}
+#friendTabs{display:grid;grid-template-columns:repeat(3,1fr);margin:0 16px;border-bottom:1px solid var(--line)}
+#friendTabs button{background:transparent;border:0;border-bottom:3px solid transparent;color:var(--muted,#9aa3c0);font:600 14px inherit;min-height:44px;cursor:pointer}
+#friendTabs button[aria-selected=true]{color:var(--ink,#fff);border-bottom-color:var(--personal-bubble,#7c3aed)}
+#friendBody{padding:14px 16px 16px;overflow:auto;flex:1;min-height:0}
+#friendMessage{margin:0;padding:0 16px 12px;min-height:1.2em;font-size:13px}
+#friendMessage[data-bad="1"]{color:#ff8a8a}
+.fr-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.fr-chip{padding:8px 12px;border-radius:999px;border:1px solid var(--muted,#9aa3c0)!important;background:transparent!important;color:var(--ink,#fff)!important;cursor:pointer;font-size:13px}
+.fr-chip.fr-on,.fr-chip.fr-high{background:var(--personal-bubble,#7c3aed)!important;border-color:transparent!important;color:var(--personal-ink,#fff)!important}
+.fr-chip.fr-cons{background:transparent!important;border:2px solid var(--personal-bubble,#7c3aed)!important}
+.fr-tag{display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;border-radius:999px;font-size:12px;background:var(--card2,#1a2140)}
+.fr-tag.fr-high{background:var(--personal-bubble,#7c3aed);color:var(--personal-ink,#fff)}
+.fr-tag.fr-cons{border:1px solid var(--personal-bubble,#7c3aed)}
+.fr-card{padding:12px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:var(--card2,#1a2140)}
+.fr-intent{margin:4px 0}.fr-why{margin:6px 0}.fr-accepted{margin:4px 0 0;font-size:13px}
+.fr-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fr-actions button,#friendBody>button,.fr-primary{min-height:40px;padding:8px 14px;border-radius:12px;border:0;background:var(--card,#131932);color:var(--ink,#fff);cursor:pointer}
+.fr-actions .fr-primary,#friendBody .fr-primary{background:var(--personal-bubble,#7c3aed);color:var(--personal-ink,#fff)}
+.fr-actions .fr-quiet{background:transparent;color:var(--muted,#9aa3c0);text-decoration:underline}
+#friendBody button:disabled{opacity:.5;cursor:default}
+.fr-counts{font-size:13px;color:var(--muted,#9aa3c0)}
+.fr-switch{display:flex;align-items:center;gap:10px;font-weight:600;margin:4px 0 6px}
+.fr-switch input{width:22px;height:22px;flex:none}
+.fr-quiet-hours{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 12px}
+#friendBody select,#friendBody input[type=text],#friendNote{width:100%;box-sizing:border-box;margin:6px 0}
+.fr-quiet-hours select{width:auto}
+#friendBody h3{margin:16px 0 4px;font-size:15px}
+#friendBody>button.fr-primary{margin-top:12px;width:100%}
+@media(prefers-reduced-motion:reduce){#friendDialog{animation:none}}
